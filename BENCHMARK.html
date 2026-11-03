@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="yue-Hant-HK"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>yue-phone benchmark v1 — demo</title>
+<style>
+body{font-family:system-ui,-apple-system,sans-serif;max-width:960px;margin:0 auto;padding:1.2rem;color:#222}
+h1{font-size:1.5rem}h2{font-size:1.2rem;margin-top:2rem}.muted{color:#666;font-size:.9rem}
+table{border-collapse:collapse;margin:.6rem 0}td,th{border:1px solid #ccc;padding:.25rem .6rem;font-size:.9rem;text-align:left}
+.demo{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:1.2rem 0}
+audio{width:100%;margin:.4rem 0}
+.refrow{display:flex;flex-wrap:wrap;gap:.25rem;margin:.4rem 0}
+.chip{border-radius:4px;padding:.15rem .45rem;font-size:.85rem;border:1px solid transparent}
+.chip .han{font-size:1rem}
+.chip small{color:#555}
+.match{background:#e6f4ea}.sub{background:#fce8e6;border-color:#c5221f}.del{background:#f1f3f4;border-style:dashed}
+.tier{position:relative;height:3.2rem;background:#f6f6f6;border:1px solid #ddd;border-radius:4px;margin:.4rem 0}
+.box{position:absolute;top:0;bottom:0;overflow:hidden;border-top:4px solid;border-radius:3px;font-size:.75rem;
+ font-family:ui-monospace,monospace;text-align:center;cursor:pointer;padding-top:2px}
+.box small{display:block;color:#444}
+.box.match{background:rgba(0,158,115,.18)}
+.box.sub{background:rgba(197,34,31,.22);border-bottom:3px solid #c5221f}
+.box.ins{background:rgba(234,134,0,.25);border-bottom:3px dashed #ea8600}
+.box.active{outline:3px solid #1a73e8}
+.legend{font-size:.8rem;color:#555}
+</style></head><body>
+<h1>yue-phone v2 — Cantonese phone benchmark (50 clips)</h1>
+<p>Baseline ASR vs reference on the 50-clip set: <b>14/50 exact</b>, mean syllable
+error <b>0.232</b>, median <b>0.139</b>. Model: fine-tuned wav2vec2 + BERT-style
+Jyutping, ~6k hours Cantonese, iterative pseudo-label correction.
+Full report: <a href="https://github.com/SpeakAble-HK/speakable-phone-benchmark/blob/main/BENCHMARK.md">BENCHMARK.md</a>
+(private repo). Worst-3 non-android clips below with time-aligned hypotheses
+(<a href="https://yue-phone.hon9kon9ize.com/docs">/v1/phoneme/detail</a>, boxes span
+each syllable's CTC window — a guide, not forced alignment).</p>
+<table><tr><th>input</th><th>exact</th><th>mean SER</th><th>median SER</th></tr>
+<tr><td>original</td><td>14/50</td><td>0.232</td><td>0.139</td></tr>
+<tr><td>enhanced (dpdfnet8)</td><td>13/50</td><td>0.240</td><td>0.167</td></tr></table>
+<p class="legend">Syllable colours: green = correct, red = substitution, dashed grey = reference deleted, orange dashed = model insertion.</p>
+
+<section class="demo" id="spk_s03__env_iphone_close__prompt_mtr_07__take_01">
+<h3>spk_s03__env_iphone_close__prompt_mtr_07__take_01</h3>
+<p class="muted">iphone_close · ref mtr_07 ·
+syllable error rate 0.444 · duration 4.93s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
+<audio controls preload="metadata" src="assets/spk_s03__env_iphone_close__prompt_mtr_07__take_01.wav"></audio>
+<div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
+<div class="refrow"><span class="chip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="chip match" title="dei6 — correct"><span class="han">哋</span> dei6</span><span class="chip match" title="jiu3 — correct"><span class="han">要</span> jiu3</span><span class="chip match" title="heoi3 — correct"><span class="han">去</span> heoi3</span><span class="chip match" title="gung1 — correct"><span class="han">公</span> gung1</span><span class="chip sub" title="jyun5 — wrong"><span class="han">園</span> jyun5</span><span class="chip sub" title="waan2 — wrong"><span class="han">玩</span> waan2</span><span class="chip sub" title="waat6 — wrong"><span class="han">滑</span> waat6</span><span class="chip sub" title="tai1 — wrong"><span class="han">梯</span> tai1</span></div>
+<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box to hear it):</div>
+<div class="tier"><div class="box match" data-start="1.64" data-end="1.89" style="left:33.24%;width:5.07%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="box match" data-start="1.89" data-end="2.25" style="left:38.31%;width:7.30%;border-top-color:#555555" title="dei6 conf 100% — click to play">dei6<small>100%</small></div><div class="box match" data-start="2.25" data-end="2.65" style="left:45.60%;width:8.11%;border-top-color:#4daf4a" title="jiu3 conf 100% — click to play">jiu3<small>100%</small></div><div class="box match" data-start="2.65" data-end="3.01" style="left:53.71%;width:7.30%;border-top-color:#4daf4a" title="heoi3 conf 100% — click to play">heoi3<small>100%</small></div><div class="box match" data-start="3.01" data-end="3.33" style="left:61.01%;width:6.49%;border-top-color:#e41a1c" title="gung1 conf 100% — click to play">gung1<small>100%</small></div><div class="box sub" data-start="3.33" data-end="3.61" style="left:67.49%;width:5.67%;border-top-color:#ff7f00" title="jyu5 conf 57% alt: jyu6(0.35), jyu4(0.04) — click to play">jyu5<small>57%</small></div><div class="box sub" data-start="3.61" data-end="4.05" style="left:73.17%;width:8.92%;border-top-color:#377eb8" title="waa2 conf 93% alt: waa6(0.07) — click to play">waa2<small>93%</small></div><div class="box sub" data-start="4.05" data-end="4.49" style="left:82.08%;width:8.92%;border-top-color:#555555" title="waak6 conf 98% alt: waa6(0.01) — click to play">waak6<small>98%</small></div><div class="box sub" data-start="4.49" data-end="4.93" style="left:91.00%;width:8.92%;border-top-color:#4daf4a" title="taai3 conf 70% alt: taai1(0.29) — click to play">taai3<small>70%</small></div></div>
+</section>
+
+<section class="demo" id="spk_s02__env_unknown__prompt_mtr_03__take_01">
+<h3>spk_s02__env_unknown__prompt_mtr_03__take_01</h3>
+<p class="muted">unknown · ref mtr_03 ·
+syllable error rate 0.364 · duration 5.35s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
+<audio controls preload="metadata" src="assets/spk_s02__env_unknown__prompt_mtr_03__take_01.wav"></audio>
+<div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
+<div class="refrow"><span class="chip sub" title="ze6 — wrong"><span class="han">姐</span> ze6</span><span class="chip match" title="ze1 — correct"><span class="han">姐</span> ze1</span><span class="chip sub" title="bong1 — wrong"><span class="han">幫</span> bong1</span><span class="chip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="chip match" title="zin2 — correct"><span class="han">剪</span> zin2</span><span class="chip match" title="zo2 — correct"><span class="han">咗</span> zo2</span><span class="chip match" title="jat1 — correct"><span class="han">一</span> jat1</span><span class="chip match" title="zoeng1 — correct"><span class="han">張</span> zoeng1</span><span class="chip sub" title="saan1 — wrong"><span class="han">生</span> saan1</span><span class="chip match" title="jat6 — correct"><span class="han">日</span> jat6</span><span class="chip sub" title="kaat1 — wrong"><span class="han">卡</span> kaat1</span></div>
+<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box to hear it):</div>
+<div class="tier"><div class="box sub" data-start="0.96" data-end="1.21" style="left:17.93%;width:4.67%;border-top-color:#984ea3" title="ze4 conf 64% alt: ze6(0.35) — click to play">ze4<small>64%</small></div><div class="box match" data-start="1.21" data-end="1.61" style="left:22.60%;width:7.47%;border-top-color:#e41a1c" title="ze1 conf 100% — click to play">ze1<small>100%</small></div><div class="box sub" data-start="1.61" data-end="1.97" style="left:30.07%;width:6.72%;border-top-color:#e41a1c" title="fon1 conf 93% alt: fong1(0.07) — click to play">fon1<small>93%</small></div><div class="box match" data-start="1.97" data-end="2.33" style="left:36.79%;width:6.72%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="box match" data-start="2.33" data-end="2.77" style="left:43.52%;width:8.22%;border-top-color:#377eb8" title="zin2 conf 100% — click to play">zin2<small>100%</small></div><div class="box match" data-start="2.77" data-end="3.17" style="left:51.74%;width:7.47%;border-top-color:#377eb8" title="zo2 conf 100% — click to play">zo2<small>100%</small></div><div class="box match" data-start="3.17" data-end="3.49" style="left:59.21%;width:5.98%;border-top-color:#e41a1c" title="jat1 conf 100% — click to play">jat1<small>100%</small></div><div class="box match" data-start="3.49" data-end="3.93" style="left:65.18%;width:8.22%;border-top-color:#e41a1c" title="zoeng1 conf 100% — click to play">zoeng1<small>100%</small></div><div class="box sub" data-start="3.93" data-end="4.29" style="left:73.40%;width:6.72%;border-top-color:#e41a1c" title="saang1 conf 100% — click to play">saang1<small>100%</small></div><div class="box match" data-start="4.29" data-end="4.38" style="left:80.13%;width:1.68%;border-top-color:#555555" title="jat6 conf 100% — click to play">jat6<small>100%</small></div><div class="box sub" data-start="4.53" data-end="4.81" style="left:84.61%;width:5.23%;border-top-color:#e41a1c" title="kaak1 conf 98% alt: kaat1(0.02) — click to play">kaak1<small>98%</small></div></div>
+</section>
+
+<section class="demo" id="spk_s01__env_iphone_far__prompt_mtr_05__take_01">
+<h3>spk_s01__env_iphone_far__prompt_mtr_05__take_01</h3>
+<p class="muted">iphone_far · ref mtr_05 ·
+syllable error rate 0.222 · duration 3.65s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
+<audio controls preload="metadata" src="assets/spk_s01__env_iphone_far__prompt_mtr_05__take_01.wav"></audio>
+<div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
+<div class="refrow"><span class="chip match" title="ping4 — correct"><span class="han">蘋</span> ping4</span><span class="chip match" title="gwo2 — correct"><span class="han">果</span> gwo2</span><span class="chip match" title="tung4 — correct"><span class="han">同</span> tung4</span><span class="chip sub" title="caang2 — wrong"><span class="han">橙</span> caang2</span><span class="chip match" title="dou1 — correct"><span class="han">都</span> dou1</span><span class="chip match" title="fong3 — correct"><span class="han">放</span> fong3</span><span class="chip match" title="hai2 — correct"><span class="han">喺</span> hai2</span><span class="chip match" title="toi4 — correct"><span class="han">枱</span> toi4</span><span class="chip sub" title="min6 — wrong"><span class="han">面</span> min6</span></div>
+<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box to hear it):</div>
+<div class="tier"><div class="box match" data-start="0.84" data-end="1.09" style="left:22.99%;width:6.84%;border-top-color:#984ea3" title="ping4 conf 100% — click to play">ping4<small>100%</small></div><div class="box match" data-start="1.09" data-end="1.41" style="left:29.83%;width:8.76%;border-top-color:#377eb8" title="gwo2 conf 100% — click to play">gwo2<small>100%</small></div><div class="box match" data-start="1.41" data-end="1.73" style="left:38.59%;width:8.76%;border-top-color:#984ea3" title="tung4 conf 100% — click to play">tung4<small>100%</small></div><div class="box sub" data-start="1.73" data-end="2.09" style="left:47.35%;width:9.85%;border-top-color:#984ea3" title="caan4 conf 96% alt: caang4(0.02) — click to play">caan4<small>96%</small></div><div class="box match" data-start="2.09" data-end="2.29" style="left:57.20%;width:5.47%;border-top-color:#e41a1c" title="dou1 conf 100% — click to play">dou1<small>100%</small></div><div class="box match" data-start="2.29" data-end="2.65" style="left:62.67%;width:9.85%;border-top-color:#4daf4a" title="fong3 conf 100% — click to play">fong3<small>100%</small></div><div class="box match" data-start="2.65" data-end="2.89" style="left:72.52%;width:6.57%;border-top-color:#377eb8" title="hai2 conf 100% — click to play">hai2<small>100%</small></div><div class="box match" data-start="2.89" data-end="3.21" style="left:79.09%;width:8.76%;border-top-color:#984ea3" title="toi4 conf 97% alt: toi3(0.02) — click to play">toi4<small>97%</small></div><div class="box sub" data-start="3.21" data-end="3.65" style="left:87.85%;width:12.04%;border-top-color:#555555" title="in6 conf 23% alt: i6(0.22), i3(0.05) — click to play">in6<small>23%</small></div></div>
+</section>
+<script>
+document.querySelectorAll('.demo').forEach(demo => {
+  const audio = demo.querySelector('audio');
+  const boxes = [...demo.querySelectorAll('.box[data-start]')];
+  audio.addEventListener('timeupdate', () => {
+    const t = audio.currentTime;
+    boxes.forEach(b => {
+      const s = parseFloat(b.dataset.start), e = parseFloat(b.dataset.end);
+      b.classList.toggle('active', t >= s && t < e);
+    });
+  });
+  boxes.forEach(b => b.addEventListener('click', () => {
+    audio.currentTime = parseFloat(b.dataset.start);
+    audio.play();
+  }));
+});
+</script>
+</body></html>
