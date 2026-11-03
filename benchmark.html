@@ -260,7 +260,7 @@ footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-t
     <div class="cols">
       <div class="panel">
         <h3>Does audio quality predict errors?</h3>
-        <p class="small" style="margin:4px 0 10px">Per-clip DNSMOS OVRL against SER. Points marked ◇ are the suspected mislabeled clips.</p>
+        <p class="small" style="margin:4px 0 10px">Per-clip DNSMOS OVRL against SER.</p>
         <svg id="scatter" role="img" aria-label="DNSMOS OVRL versus SER scatter"></svg>
       </div>
       <div class="panel">
@@ -538,16 +538,14 @@ function seqColor(t) { const i = Math.max(0, Math.min(5, Math.round(t * 5))); re
   txt(svg, (L + W) / 2, H - 2, "DNSMOS OVRL", {"text-anchor": "middle"});
   const xi = DATA.metrics.indexOf("dnsmos_ovrl");
   clips.forEach(c => {
-    const fl = isFlagged(c), cx = x(c.mos[xi]), cy = y(c.ser);
-    const n = fl ? el("rect", {x: cx - 5, y: cy - 5, width: 10, height: 10, fill: "var(--panel)", stroke: "var(--warn-edge)", "stroke-width": 2, transform: `rotate(45 ${cx} ${cy})`}, svg)
-      : el("circle", {cx, cy, r: 4.5, fill: c.group === "studio_reference" ? "var(--studio)" : "var(--accent)", "fill-opacity": .75, stroke: "var(--panel)", "stroke-width": 1.2}, svg);
+    const n = el("circle", {cx: x(c.mos[xi]), cy: y(c.ser), r: 4.5, fill: c.group === "studio_reference" ? "var(--studio)" : "var(--accent)", "fill-opacity": .75, stroke: "var(--panel)", "stroke-width": 1.2}, svg);
     hover(n, `<b>${SHORT[c.group]} · ${c.prompt}</b><br>OVRL ${c.mos[xi].toFixed(2)} · SER ${c.ser.toFixed(3)}`);
   });
-  const ok = clips.filter(c => !isFlagged(c)), xs = ok.map(c => c.mos[xi]), ys = ok.map(c => c.ser);
+  const xs = clips.map(c => c.mos[xi]), ys = clips.map(c => c.ser);
   const mx = mean(xs), my = mean(ys);
   const r = xs.reduce((s, v, i) => s + (v - mx) * (ys[i] - my), 0) / Math.sqrt(xs.reduce((s, v) => s + (v - mx) ** 2, 0) * ys.reduce((s, v) => s + (v - my) ** 2, 0));
   const p = svg.parentNode.querySelector("p");
-  p.innerHTML += ` Excluding them, Pearson r = <strong>${r.toFixed(2)}</strong>, so audio quality explains almost none of the error. <span style="white-space:nowrap"><span class="sw" style="background:var(--studio)"></span>studio</span> <span style="white-space:nowrap"><span class="sw" style="background:var(--accent)"></span>phone</span>`;
+  p.innerHTML += ` Pearson r = <strong>${r.toFixed(2)}</strong>, so audio quality explains almost none of the error. <span style="white-space:nowrap"><span class="sw" style="background:var(--studio)"></span>studio</span> <span style="white-space:nowrap"><span class="sw" style="background:var(--accent)"></span>phone</span>`;
 })();
 
 /* SER table */
