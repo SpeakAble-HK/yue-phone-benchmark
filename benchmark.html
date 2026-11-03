@@ -372,6 +372,10 @@ const byGroup = k => clips.filter(c => c.group === k);
 // "…跑嚟跑去"). Shows up as a min6 insertion in the hypothesis.
 const MIN6 = new Set(["spk_s01__env_iphone_far__prompt_mtr_10__take_01", "spk_s01__env_studio_reference__prompt_mtr_10__take_01", "spk_s02__env_unknown__prompt_mtr_10__take_01"]);
 const isMin6 = c => MIN6.has(c.id);
+// Speaker mispronunciation (not a model error): the mtr_06 iPhone-close clip
+// where the speaker failed to sound keoi5 (佢) — heard as heoi5, k- onset missing.
+const KEOI = new Set(["spk_s03__env_iphone_close__prompt_mtr_06__take_01"]);
+const isKeoi = c => KEOI.has(c.id);
 const fmt = (x, d = 3) => x.toFixed(d);
 
 function el(tag, attrs = {}, parent) {
@@ -520,7 +524,7 @@ function seqColor(t) { const i = Math.max(0, Math.min(5, Math.round(t * 5))); re
     cs.forEach((c, j) => {
       const jit = ((j * 7) % 5 - 2) * 3.5;
       const node = el("circle", {cx: x(c.ser), cy: cy + jit, r: 4.5, fill: "var(--ink)", "fill-opacity": .65, stroke: "var(--panel)", "stroke-width": 1.2}, svg);
-      hover(node, `<b>${c.prompt}</b> · SER ${c.ser.toFixed(3)}${isMin6(c) ? `<br>speaker deviation: said min6 (面), prompt has lai4 (嚟)` : ""}<br>${c.zh}`);
+      hover(node, `<b>${c.prompt}</b> · SER ${c.ser.toFixed(3)}${isMin6(c) ? `<br>speaker deviation: said min6 (面), prompt has lai4 (嚟)` : ""}${isKeoi(c) ? `<br>speaker failed to sound keoi5 (佢), heard heoi5` : ""}<br>${c.zh}`);
     });
     txt(svg, W - R + 12, cy + 4, mu.toFixed(3), {class: "val"});
   });
@@ -631,7 +635,7 @@ function drawClips() {
       : `<span class="s ins" title="inserted">+${h}</span>`).join("");
     return `<div class="clip" tabindex="0">
       <div class="pid">${c.prompt}<span>${SHORT[c.group]}</span></div>
-      <div><div class="zh">${c.zh}${isMin6(c) ? `<span class="flagtag">speaker said min6 (面), prompt lai4 (嚟)</span>` : ""}</div><div class="syl">${syl}</div></div>
+      <div><div class="zh">${c.zh}${isMin6(c) ? `<span class="flagtag">speaker said min6 (面), prompt lai4 (嚟)</span>` : ""}${isKeoi(c) ? `<span class="flagtag">speaker missed keoi5 (佢), heard heoi5</span>` : ""}</div><div class="syl">${syl}</div></div>
       <div class="ser ${c.exact ? "ok" : ""}">${c.exact ? "exact" : `<span class="${c.ser >= .5 ? "bad" : ""}">${c.ser.toFixed(2)}</span>`}<small>SER</small></div>
     </div>`;
   }).join("") || `<p class="small" style="padding:12px 4px">No clips in this view.</p>`;
