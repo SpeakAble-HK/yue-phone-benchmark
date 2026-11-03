@@ -1,179 +1,742 @@
-<!DOCTYPE html>
-<html lang="yue-Hant-HK"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>yue-phone benchmark v1</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cantonese Phone Benchmark v1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Noto+Serif+HK:wght@500&display=swap">
 <style>
-body{font-family:system-ui,-apple-system,sans-serif;max-width:960px;margin:0 auto;padding:1.2rem;color:#222}
-h1{font-size:1.5rem}h2{font-size:1.2rem;margin-top:2rem}.muted{color:#666;font-size:.9rem}
-table{border-collapse:collapse;margin:.6rem 0}td,th{border:1px solid #ccc;padding:.25rem .6rem;font-size:.9rem;text-align:left}
-.demo{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:1.2rem 0}
-audio{width:100%;margin:.4rem 0}
-.refrow{display:flex;flex-wrap:wrap;gap:.25rem;margin:.4rem 0}
-.chip{border-radius:4px;padding:.15rem .45rem;font-size:.85rem;border:1px solid transparent}
-.chip .han{font-size:1rem}
-.chip small{color:#555}
-.match{background:#e6f4ea}.sub{background:#fce8e6;border-color:#c5221f}.del{background:#f1f3f4;border-style:dashed}
-.wave{width:100%;height:64px;display:block;background:#fafafa;border:1px solid #ddd;border-radius:4px;cursor:pointer}
-.tier{position:relative;height:3.2rem;background:#f6f6f6;border:1px solid #ddd;border-radius:4px;margin:.4rem 0}
-.box{position:absolute;top:0;bottom:0;overflow:hidden;border-top:4px solid;border-radius:3px;font-size:.75rem;
- font-family:ui-monospace,monospace;text-align:center;cursor:pointer;padding-top:2px}
-.box small{display:block;color:#444}
-.box.match{background:rgba(0,158,115,.18)}
-.box.sub{background:rgba(197,34,31,.22);border-bottom:3px solid #c5221f}
-.box.ins{background:rgba(234,134,0,.25);border-bottom:3px dashed #ea8600}
-.box.active{outline:3px solid #1a73e8}
-.legend{font-size:.8rem;color:#555}
+/* Layout: one 1040px reading column; each section = eyebrow + claim headline + chart panel + short reading. */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f5;
+  --panel: #fdfdfc;
+  --ink: #12181b;
+  --ink-2: #4b5458;
+  --muted: #858d90;
+  --grid: #e2e5e3;
+  --axis: #c3c8c6;
+  --line: rgba(18,24,27,.10);
+  --accent: #2a78d6;           /* series 1 / clips */
+  --accent-soft: #e3eefb;
+  --studio: #1baf7a;           /* studio reference marker */
+  --err: #e34948;              /* substitutions */
+  --err-soft: #fbe3e2;
+  --ins: #eb6834;
+  --warn-bg: #fff4dc;
+  --warn-ink: #7a4b00;
+  --warn-edge: #eda100;
+  --band-bad: #f6dede; --band-poor: #f9e9da; --band-fair: #f5f1dc; --band-good: #e2efe4; --band-exc: #dceaf5;
+  --seq-0: #f1f5fb; --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-hk: "Noto Serif HK", "PingFang HK", "Microsoft JhengHei", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  color-scheme: dark;
+  --bg: #0f1315; --panel: #171c1f; --ink: #eef1f0; --ink-2: #b9c1c3; --muted: #838c8f;
+  --grid: #262d30; --axis: #3a4246; --line: rgba(255,255,255,.10);
+  --accent: #3987e5; --accent-soft: #1b2b40; --studio: #199e70; --err: #e66767; --err-soft: #3a1f20; --ins: #d95926;
+  --warn-bg: #2e2412; --warn-ink: #f3c86b; --warn-edge: #c98500;
+  --band-bad: #2c1d1e; --band-poor: #2b221b; --band-fair: #26251b; --band-good: #1a2620; --band-exc: #19232c;
+  --seq-0: #1b2228; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #6da7ec; --seq-5: #b7d3f6;
+} }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1315; --panel: #171c1f; --ink: #eef1f0; --ink-2: #b9c1c3; --muted: #838c8f;
+  --grid: #262d30; --axis: #3a4246; --line: rgba(255,255,255,.10);
+  --accent: #3987e5; --accent-soft: #1b2b40; --studio: #199e70; --err: #e66767; --err-soft: #3a1f20; --ins: #d95926;
+  --warn-bg: #2e2412; --warn-ink: #f3c86b; --warn-edge: #c98500;
+  --band-bad: #2c1d1e; --band-poor: #2b221b; --band-fair: #26251b; --band-good: #1a2620; --band-exc: #19232c;
+  --seq-0: #1b2228; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #6da7ec; --seq-5: #b7d3f6;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 15px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1040px; margin: 0 auto; padding-block: 48px 96px; display: grid; gap: 72px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.02; font-weight: 700; }
+h2 { font-size: clamp(22px, 3.2vw, 30px); line-height: 1.15; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 500; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--f-mono); font-size: .86em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.eyebrow { font: 600 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+.eyebrow b { color: var(--accent); font-weight: 600; }
+section { display: grid; gap: 20px; min-width: 0; }
+.lede { font-size: 17px; color: var(--ink-2); }
+.small { font-size: 13px; color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+.scroll { overflow-x: auto; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.cols > * { min-width: 0; }
 
-table{border-collapse:collapse;margin:.6rem 0}td,th{border:1px solid #ccc;padding:.25rem .6rem;font-size:.9rem;text-align:left}
-img.fig{max-width:100%;border:1px solid #ddd;border-radius:4px;margin:.4rem 0}</style></head><body>
-<h1>yue-phone v2 — Cantonese phone benchmark (50 clips)</h1>
-<p><a href="https://github.com/SpeakAble-HK/yue-phone-benchmark">GitHub: SpeakAble-HK/yue-phone-benchmark</a></p>
-<p>Scoring-input audio: 16 kHz mono WAVs. System: <b>yue-phone v2</b>
-(fine-tuned wav2vec2 + BERT-style Jyutping, ~6k hours Cantonese, iterative
-pseudo-label correction). Quality raters: DNSMOS P.835 + SIGMOS P.804.
-Full data: private repo <code>speakable-phone-benchmark</code>
-(<code>BENCHMARK.md</code>).</p>
+/* hero */
+header.hero { display: grid; gap: 24px; }
+.hero .kicker { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; }
+.hero .hk { font-family: var(--f-hk); font-size: clamp(18px, 2.4vw, 22px); color: var(--ink-2); }
+.hero .jp { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12px/1 var(--f-mono); padding: 6px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); white-space: nowrap; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.tile .v { font: 700 34px/1.05 var(--f-display); }
+.tile .v small { font-size: 18px; color: var(--muted); font-weight: 500; }
+.tile .k { font-size: 13px; color: var(--ink-2); }
+.tile.flag { background: var(--warn-bg); border-color: var(--warn-edge); }
+.tile.flag .v, .tile.flag .k { color: var(--warn-ink); }
 
-<h2>1. Inventory</h2>
-<p>50 included clips, mean duration 5.4 s (3.1–7.7 s). 10 canonical prompts × 5 clips.</p>
-<table><tr><th>environment_family</th><th>clips</th><th>mic_distance</th><th>room</th><th>speaker</th></tr>
-<tr><td>studio_reference</td><td>10</td><td>close</td><td>studio</td><td>spk_s01</td></tr>
-<tr><td>iphone_far</td><td>10</td><td>far</td><td>unknown</td><td>spk_s01</td></tr>
-<tr><td>iphone_close</td><td>10</td><td>close</td><td>private_room</td><td>spk_s03</td></tr>
-<tr><td>unknown (public-transport/MTR)</td><td>10</td><td>normal</td><td>public_transport</td><td>spk_s02</td></tr>
-<tr><td>unknown (android pack)</td><td>10</td><td>unknown</td><td>unknown</td><td>spk_s02</td></tr></table>
-<img class="fig" src="figs/env_distribution.png" alt="inventory distribution">
+.callout { background: var(--warn-bg); border: 1px solid var(--warn-edge); color: var(--warn-ink); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; }
+.callout strong { font-family: var(--f-display); font-size: 17px; }
+.callout p { max-width: none; }
+.callout .mono { color: inherit; }
 
-<h2>2. Audio quality: DNSMOS + SIGMOS (original input)</h2>
-<p>Scale (standard 5-point ACR anchors): <b>bad</b> 1.0–1.8, <b>poor</b> 1.8–2.6,
-<b>fair</b> 2.6–3.4, <b>good</b> 3.4–4.2, <b>excellent</b> 4.2–5.0.
-DNSMOS P.835: SIG = speech, BAK = background, OVRL = overall.
-SIGMOS P.804: COL/DISC/LOUD/NOISE/REVERB/SIG/OVRL. Per-clip distributions
-(◆ = mean):</p>
-<img class="fig" src="figs/mos_dist_original.png" alt="MOS per-clip distribution">
-<p>Reading: overall quality is <b>poor</b> (both OVRL means ≈ 2.2–2.3) —
-background noise is the problem (BAK ≈ 2.5, NOISE ≈ 2.5), not the voice itself
-(SIG ≈ 3.2 fair, DISC ≈ 3.5 good). Reverb is a non-issue (≈ 3.9 good).</p>
+/* tables */
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+th { font: 600 11px/1.2 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
 
-<h2>3. Baseline model: yue-phone v2</h2>
-<p>Fine-tuned wav2vec2 with BERT-style Jyutping modeling; ~6k hours Cantonese with
-iterative pseudo-label correction. Served on GPU via <code>/v1/phoneme</code>
-(~0.03–0.05 RTF).</p>
+/* chips row / filters */
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { font: 500 13px/1 var(--f-body); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.filters button:focus-visible, .clip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-<h2>4. ASR: yue-phone v2 on original input</h2>
-<table><tr><th>input</th><th>exact</th><th>mean SER</th><th>median SER</th></tr>
-<tr><td>original</td><td>14/50</td><td>0.232</td><td>0.139</td></tr></table>
-<img class="fig" src="figs/ser_by_env.png" alt="SER by environment">
-<p>Mean SER by environment: studio_reference 0.093,
-iphone_close 0.188, iphone_far 0.144,
-unknown 0.369.</p>
+/* charts */
+svg { display: block; max-width: 100%; height: auto; overflow: visible; }
+svg text { fill: var(--muted); font: 11px var(--f-mono); }
+svg .lbl { fill: var(--ink-2); font: 500 12px var(--f-body); }
+svg .val { fill: var(--ink); font: 600 11px var(--f-mono); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); font: 12px/1.45 var(--f-body); padding: 8px 10px; border-radius: 8px; max-width: 280px; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+.tip b { font-family: var(--f-mono); font-weight: 600; }
+.tip[hidden] { display: none; }
 
-<h2>5. Confusion analysis (onset / rime / coda / tone)</h2>
-<p>Syllables split four ways (rime = vocalic nucleus incl. i/u glides;
-coda ∈ m/n/ng/p/t/k/∅). Component accuracy:
-onset 0.877, rime 0.870, coda 0.862, tone 0.858.</p>
-<img class="fig" src="figs/component_accuracy.png" alt="component accuracy">
-<img class="fig" src="figs/confusion_tone_original.png" alt="tone confusion">
-<img class="fig" src="figs/confusion_coda_original.png" alt="coda confusion">
-<p>Top patterns: coda <b>n→∅</b> (x11), <b>t→k</b> (x9);
-tone <b>6→4 / 6→1</b> (x6 each); onset <b>z→d</b> (x5); rime <b>u→o</b>,
-<b>yu→a</b>. Weak spots: nasal/stop codas and tone 6.</p>
+/* waffle */
+.inv { display: grid; gap: 4px; }
+.inv-row { display: grid; grid-template-columns: minmax(150px, 1.3fr) 2fr 1.6fr; gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--grid); }
+.inv-row:last-child { border-bottom: 0; }
+.inv-name { font-weight: 600; }
+.inv-name span { display: block; font: 400 12px var(--f-mono); color: var(--muted); }
+.dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.dot { width: 18px; height: 18px; border-radius: 5px; background: var(--accent); opacity: .9; }
+.inv-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 640px) { .inv-row { grid-template-columns: 1fr; gap: 8px; } }
 
-<h2>6. Takeaways</h2>
-<ul><li>yue-phone v2 baseline: 14/50 exact, mean SER 0.232 (median 0.139).</li>
-<li>Hardest slice: unknown (0.369); easiest: studio_reference (0.093).</li>
-<li>Error mass sits in codas (−n drop, −t→−k) and tone 6 — acoustic-model work.</li></ul>
+/* model card */
+dl.spec { display: grid; grid-template-columns: max-content 1fr; gap: 10px 20px; margin: 0; }
+dl.spec dt { font: 600 11px/1.6 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+dl.spec dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) { dl.spec { grid-template-columns: 1fr; gap: 2px; } dl.spec dd { margin-bottom: 10px; } }
 
-<h2>7. Worst-clip demos (time-aligned hypotheses)</h2>
-<p>Boxes span each syllable's CTC window from
-<a href="https://yue-phone.hon9kon9ize.com/docs">/v1/phoneme/detail</a> (a guide,
-not forced alignment). Click a box to hear that segment.</p>
-<p class="legend">Green = correct, red = substitution, dashed grey = reference deleted, orange dashed = model insertion.</p>
+/* confusion */
+.pairs { display: grid; gap: 8px; }
+.pair { display: grid; grid-template-columns: 56px 1fr 34px; gap: 10px; align-items: center; font-size: 13px; }
+.pair .comp { font: 600 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pair .ex { font-family: var(--f-mono); }
+.pair .ex i { font-style: normal; color: var(--muted); padding: 0 4px; }
+.pair .bar { height: 6px; border-radius: 3px; background: var(--err); margin-top: 3px; }
+.pair .n { text-align: right; font: 600 12px var(--f-mono); font-variant-numeric: tabular-nums; }
 
-<section class="demo" id="spk_s03__env_iphone_close__prompt_mtr_07__take_01">
+/* clip explorer */
+.clips { display: grid; gap: 0; }
+.clip { display: grid; grid-template-columns: 70px minmax(0, 1fr) 64px; gap: 14px; padding: 12px 4px; border-bottom: 1px solid var(--grid); align-items: start; }
+.clip:last-child { border-bottom: 0; }
+.clip .pid { font: 600 12px var(--f-mono); color: var(--ink-2); }
+.clip .pid span { display: block; font-weight: 400; color: var(--muted); font-size: 11px; margin-top: 2px; }
+.clip .zh { font-family: var(--f-hk); font-size: 16px; }
+.syl { display: flex; flex-wrap: wrap; gap: 4px 3px; margin-top: 6px; }
+.s { font: 12px/1.2 var(--f-mono); padding: 3px 5px; border-radius: 4px; background: transparent; color: var(--ink-2); display: inline-grid; text-align: center; }
+.s.sub { background: var(--err-soft); color: var(--ink); }
+.s.sub .h { color: var(--err); font-weight: 600; }
+.s.del { background: var(--err-soft); text-decoration: line-through; color: var(--err); }
+.s.ins { border: 1px dashed var(--ins); color: var(--ins); }
+.s .h { font-size: 11px; }
+.ser { text-align: right; font: 600 14px var(--f-mono); font-variant-numeric: tabular-nums; }
+.ser.ok { color: var(--studio); }
+.ser .bad { color: var(--err); }
+.ser small { display: block; font-weight: 400; font-size: 10px; color: var(--muted); }
+.flagtag { display: inline-block; margin-left: 6px; font: 600 10px var(--f-mono); padding: 2px 6px; border-radius: 4px; background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-edge); }
+
+.takeaways { display: grid; gap: 0; counter-reset: t; }
+.takeaways li { list-style: none; display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--grid); }
+.takeaways li:last-child { border-bottom: 0; }
+.takeaways li::before { counter-increment: t; content: counter(t); font: 700 22px/1.1 var(--f-display); color: var(--accent); }
+.takeaways { padding: 0; margin: 0; }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 6px; border-top: 1px solid var(--grid); padding-top: 20px; }
+@media (prefers-reduced-motion: no-preference) {
+  .grow { transform-origin: left; animation: grow .7s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes grow { from { transform: scaleX(.001); } }
+}
+
+.ddemo{border:1px solid var(--grid);border-radius:8px;padding:1rem;margin:1.2rem 0;background:var(--panel)}
+.ddemo audio{width:100%;margin:.4rem 0}
+.drefrow{display:flex;flex-wrap:wrap;gap:.25rem;margin:.4rem 0}
+.dchip{border-radius:4px;padding:.15rem .45rem;font-size:.85rem;border:1px solid transparent}
+.dchip .dhan{font-size:1rem}
+.dchip small{color:var(--muted)}
+.dchip.match{background:#e6f4ea}.dchip.sub{background:#fce8e6;border-color:#c5221f}.dchip.del{background:#f1f3f4;border-style:dashed}
+.dwave{width:100%;height:64px;display:block;background:#fafafa;border:1px solid var(--grid);border-radius:4px;cursor:pointer}
+.dtier{position:relative;height:3.2rem;background:#f6f6f6;border:1px solid var(--grid);border-radius:4px;margin:.4rem 0}
+.dbox{position:absolute;top:0;bottom:0;overflow:hidden;border-top:4px solid;border-radius:3px;font-size:.75rem;
+ font-family:ui-monospace,monospace;text-align:center;cursor:pointer;padding-top:2px;color:#222}
+.dbox small{display:block;color:#444}
+.dbox.match{background:rgba(0,158,115,.18)}
+.dbox.sub{background:rgba(197,34,31,.22);border-bottom:3px solid #c5221f}
+.dbox.ins{background:rgba(234,134,0,.25);border-bottom:3px dashed #ea8600}
+.dbox.dactive{outline:3px solid #1a73e8}
+
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow"><b>Speakable</b> · Benchmark v1 · yue-phone baseline · 2026-11-03 · <a href="https://github.com/SpeakAble-HK/yue-phone-benchmark">GitHub</a></div>
+    <h1>How well does yue-phone hear Cantonese on a phone?</h1>
+    <div class="kicker">
+      <span class="hk">媽媽喺廚房煮飯，好香呀</span>
+      <span class="jp">maa4 maa1 hai2 cyu4 fong2 zyu2 faan6 hou2 hoeng1 aa3</span>
+    </div>
+    <p class="lede">50 phone and studio recordings of 10 canonical prompts, scored for audio quality with DNSMOS&nbsp;P.835 and SIGMOS&nbsp;P.804, and transcribed to toned Jyutping by <strong>yue-phone</strong>. The studio clips serve as the clean reference that every phone condition is measured against.</p>
+    <div class="tiles" id="tiles"></div>
+  </header>
+
+  <section id="inventory">
+    <div class="eyebrow"><b>§1</b> Inventory</div>
+    <h2>Five recording conditions, ten clips each</h2>
+    <p>Each condition contains one take of each of the 10 prompts (<span class="mono">mtr_01</span>–<span class="mono">mtr_10</span>). Clips run 3.1–7.7&nbsp;s, mean 5.4&nbsp;s. Each square below is one clip; hover a square for its prompt and duration.</p>
+    <div class="panel"><div class="inv" id="inv"></div></div>
+    <p class="small">Scoring input: <code>audio/wav16k_mono</code> (16&nbsp;kHz mono WAV). References: <code>metadata/samples_manifest_v1.csv</code>. Protocol: <code>docs/BENCHMARK_PROTOCOL_V1.md</code>. CER is the primary metric; the Jyutping comparison here is supplementary.</p>
+  </section>
+
+  <section id="quality">
+    <div class="eyebrow"><b>§2</b> Audio quality · DNSMOS + SIGMOS</div>
+    <h2>The voices are fine. The background is what makes these clips sound poor.</h2>
+    <p>Overall quality averages <strong>poor</strong> (both OVRL means are about 2.2–2.3). The low scores come from background noise (BAK and NOISE about 2.5), while the speech itself rates fair to good (SIG about 3.2, DISC about 3.5). Reverb is not a problem (about 3.9). Pick a condition to see where its clips fall.</p>
+    <div class="filters" id="mosFilter" role="group" aria-label="Highlight condition"></div>
+    <div class="panel scroll"><svg id="mosStrip" role="img" aria-label="Per-clip MOS distributions for ten metrics"></svg>
+      <div class="legend" style="margin-top:10px">
+        <span><span class="sw" style="background:var(--accent)"></span>clip</span>
+        <span><span class="sw" style="background:var(--ink);transform:rotate(45deg) scale(.8)"></span>mean of shown clips</span>
+        <span>ITU 5-point ACR bands: bad · poor · fair · good · excellent</span>
+      </div>
+    </div>
+    <h3>Mean score by condition</h3>
+    <div class="panel scroll"><svg id="mosHeat" role="img" aria-label="Mean MOS per condition and metric"></svg></div>
+    <p class="small">DNSMOS P.835: SIG speech, BAK background, OVRL overall. SIGMOS P.804: COL coloration, DISC discontinuity, LOUD loudness, NOISE noisiness, REVERB reverberation, SIG signal, OVRL overall. Sidecar <code>metadata/audio_quality_dnsmos_sigmos_v1.{csv,json}</code> · <code>speechonnxmetrics 0.0.2a3</code>, <code>dnsmos-onnx@27691a5</code>, <code>sigmos-onnx@33ccd4f</code>.</p>
+  </section>
+
+  <section id="model">
+    <div class="eyebrow"><b>§3</b> System under test</div>
+    <h2>yue-phone v2</h2>
+    <div class="panel">
+      <dl class="spec">
+        <dt>Architecture</dt><dd>Fine-tuned <strong>wav2vec2-BERT</strong> recognizer that outputs toned Jyutping syllables per clip.</dd>
+        <dt>Training</dt><dd>About 6k hours of Cantonese speech with iterative pseudo-label correction. These details come from the model provider and were not verified here.</dd>
+        <dt>Serving</dt><dd>ONNX Runtime on GPU (RTX 3080), about 0.03–0.05 RTF end to end. Queried on 2026-11-03 via <code>POST /v1/phoneme</code> (multipart <code>file</code>, 16&nbsp;kHz WAV) at <code>https://yue-phone.hon9kon9ize.com</code>.</dd>
+        <dt>Run</dt><dd><code>results/yue-phone_20261103/hypotheses.{csv,json}</code>. All 50 of 50 clips were transcribed with no failures.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section id="asr">
+    <div class="eyebrow"><b>§4</b> Recognition accuracy</div>
+    <h2>The studio is the floor; one Android pack is the outlier</h2>
+    <p>Syllable error rate (SER) is the edit distance between reference and hypothesis Jyutping, divided by reference length. Each dot is one clip, and the bar marks the condition's mean. The dashed line is the studio mean, the best a condition can expect.</p>
+    <div class="panel scroll"><svg id="serChart" role="img" aria-label="SER per clip by condition"></svg></div>
+    <div class="callout" id="flag"></div>
+    <div class="cols">
+      <div class="panel">
+        <h3>Does audio quality predict errors?</h3>
+        <p class="small" style="margin:4px 0 10px">Per-clip DNSMOS OVRL against SER. Points marked ◇ are the suspected mislabeled clips.</p>
+        <svg id="scatter" role="img" aria-label="DNSMOS OVRL versus SER scatter"></svg>
+      </div>
+      <div class="panel">
+        <h3>Per-condition summary</h3>
+        <div class="scroll" style="margin-top:8px"><table id="serTable"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="confusions">
+    <div class="eyebrow"><b>§5</b> Confusion analysis</div>
+    <h2>Errors cluster in codas and tone 6</h2>
+    <p>Each syllable is split into onset, rime (vocalic nucleus, including i/u glides), coda (m, n, ng, p, t, k or ∅) and tone. Reference and hypothesis are aligned with syllable-level Levenshtein distance, and ∅ marks the empty side of an insertion or deletion.</p>
+    <div class="cols">
+      <div class="panel"><h3>Component accuracy</h3><svg id="compAcc" role="img" aria-label="Component accuracy"></svg></div>
+      <div class="panel"><h3>Most frequent confusions</h3><div class="pairs" id="pairs" style="margin-top:12px"></div></div>
+    </div>
+    <div class="cols">
+      <div class="panel scroll"><h3>Tone · reference → hypothesis</h3><svg id="heatTone" role="img" aria-label="Tone confusion matrix"></svg></div>
+      <div class="panel scroll"><h3>Coda · reference → hypothesis</h3><svg id="heatCoda" role="img" aria-label="Coda confusion matrix"></svg></div>
+    </div>
+    <p class="small">The diagonal (correct) cells are greyed so the errors stand out. Shading intensity encodes the off-diagonal count. Matrices: <code>results/yue-phone_20261103/confusion_{onset,rime,coda,tone}.csv</code>.</p>
+  </section>
+
+  <section id="explorer">
+    <div class="eyebrow"><b>§6</b> Clip explorer</div>
+    <h2>Every clip, syllable by syllable</h2>
+    <p>The reference Jyutping is shown in each clip's row. A red cell is a substitution, showing the reference syllable over the recognized one. Struck-through text is a deletion and a dashed box is an insertion.</p>
+    <div class="filters" id="clipFilter" role="group" aria-label="Filter clips"></div>
+    <div class="panel"><div class="clips" id="clips"></div></div>
+  </section>
+
+  <section id="takeaways">
+    <section id="demos">
+    <div class="eyebrow"><b>§7</b> Worst-clip demos</div>
+    <h2>Hear the errors</h2>
+    <p>Waveform, reference hanzi + Jyutping (red = misrecognised, dashed = deleted)
+    and hypothesis positioned by model time (boxes span each syllable's CTC window —
+    a guide, not forced alignment). Click a box or the waveform to hear that segment.</p>
+
+<section class="ddemo" id="spk_s03__env_iphone_close__prompt_mtr_07__take_01">
 <h3>spk_s03__env_iphone_close__prompt_mtr_07__take_01</h3>
 <p class="muted">iphone_close · ref mtr_07 ·
 syllable error rate 0.444 · duration 4.93s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
 <audio controls preload="metadata" src="assets/spk_s03__env_iphone_close__prompt_mtr_07__take_01.wav"></audio>
-<canvas class="wave" data-dur="4.934"></canvas>
-<script type="application/json" class="peaks">[0.0, 0.0, 0.0, 0.014, 0.022, 0.023, 0.013, 0.042, 0.067, 0.086, 0.083, 0.065, 0.045, 0.043, 0.043, 0.02, 0.021, 0.028, 0.017, 0.015, 0.01, 0.011, 0.014, 0.011, 0.012, 0.019, 0.022, 0.031, 0.033, 0.048, 0.026, 0.02, 0.024, 0.034, 0.038, 0.056, 0.054, 0.072, 0.051, 0.029, 0.034, 0.037, 0.037, 0.042, 0.053, 0.051, 0.036, 0.054, 0.063, 0.064, 0.039, 0.053, 0.054, 0.067, 0.07, 0.08, 0.17, 0.251, 0.162, 0.137, 0.061, 0.048, 0.07, 0.037, 0.049, 0.054, 0.051, 0.053, 0.029, 0.074, 0.07, 0.101, 0.081, 0.116, 0.291, 0.348, 0.384, 0.275, 0.145, 0.064, 0.136, 0.804, 0.97, 0.619, 0.789, 0.645, 0.405, 0.332, 0.369, 0.217, 0.156, 0.138, 0.065, 0.083, 0.102, 0.101, 0.066, 0.093, 0.09, 0.075, 0.072, 0.055, 0.038, 0.032, 0.079, 0.079, 0.065, 0.084, 0.093, 0.057, 0.044, 0.046, 0.04, 0.053, 0.056, 0.06, 0.104, 0.232, 0.306, 0.206, 0.134, 0.127, 0.09, 0.165, 0.16, 0.157, 0.093, 0.098, 0.058, 0.087, 0.085, 0.057, 0.096, 0.082, 0.092, 0.112, 0.13, 0.108, 0.081, 0.099, 0.128, 0.127, 0.126, 0.08, 0.119, 0.095, 0.099, 0.132, 0.104, 0.092, 0.119, 0.177, 0.181, 0.13, 0.221, 0.219, 0.178, 0.148, 0.21, 0.382, 0.426, 0.435, 0.333, 0.306, 0.404, 0.442, 0.667, 0.64, 0.417, 0.479, 0.446, 0.577, 0.437, 0.938, 0.714, 0.879, 0.757, 0.633, 0.843, 0.647, 0.344, 0.168, 0.174, 0.097, 0.091, 0.065, 0.084, 0.055, 0.114, 0.081, 0.156, 0.725, 1.0, 0.908, 0.959, 0.795, 0.948, 0.957, 0.924, 0.755, 0.837, 0.824, 0.721, 0.703, 0.652, 0.668, 0.706, 0.772, 0.784, 0.799, 0.79, 0.728, 0.803, 0.801, 0.823, 0.807, 0.781, 0.729, 0.721, 0.673, 0.504, 0.453, 0.41, 0.402, 0.216, 0.011, 0.008, 0.004, 0.002, 0.001, 0.001, 0.002, 0.001, 0.001, 0.006, 0.089, 0.204, 0.394, 0.584, 0.59, 0.311, 0.297, 0.261, 0.241, 0.234, 0.188, 0.164, 0.175, 0.202, 0.194, 0.177, 0.174, 0.18, 0.183, 0.163, 0.168, 0.162, 0.158, 0.159, 0.167, 0.169, 0.182, 0.169, 0.169, 0.162, 0.113, 0.075, 0.054, 0.04, 0.033, 0.017, 0.015, 0.007, 0.008, 0.008, 0.012, 0.013, 0.033, 0.057, 0.088, 0.11, 0.118, 0.136, 0.139, 0.15, 0.162, 0.182, 0.185, 0.219, 0.227, 0.255, 0.251, 0.282, 0.325, 0.369, 0.438, 0.405, 0.423, 0.389, 0.362, 0.323, 0.341, 0.372, 0.436, 0.449, 0.457, 0.479, 0.532, 0.593, 0.641, 0.681, 0.623, 0.511, 0.362, 0.319, 0.215, 0.237, 0.167, 0.152, 0.121, 0.146, 0.241, 0.224, 0.209, 0.229, 0.271, 0.35, 0.493, 0.603, 0.682, 0.725, 0.678, 0.684, 0.693, 0.636, 0.618, 0.626, 0.591, 0.615, 0.598, 0.548, 0.549, 0.494, 0.417, 0.406, 0.414, 0.414, 0.356, 0.372, 0.401, 0.459, 0.412, 0.357, 0.187, 0.121, 0.1, 0.045, 0.028, 0.007, 0.005, 0.004, 0.002, 0.002, 0.001, 0.0, 0.003, 0.08, 0.263, 0.232, 0.521, 0.703, 0.791, 0.723, 0.694, 0.622, 0.621, 0.578, 0.57, 0.499, 0.468, 0.444, 0.41, 0.336, 0.258, 0.141, 0.09, 0.038, 0.033, 0.028, 0.025, 0.025, 0.02, 0.016, 0.016, 0.011, 0.009, 0.009, 0.009, 0.008, 0.008, 0.007, 0.007, 0.007, 0.007, 0.011, 0.03, 0.04, 0.076, 0.142, 0.219, 0.292, 0.375, 0.453, 0.57, 0.684, 0.718, 0.709, 0.697, 0.637, 0.585, 0.551, 0.527, 0.502, 0.471, 0.457, 0.404, 0.38, 0.344, 0.343, 0.336, 0.328, 0.299, 0.259, 0.19, 0.09, 0.052, 0.034, 0.017, 0.008, 0.006, 0.006, 0.005, 0.005, 0.005, 0.004, 0.006, 0.021, 0.085, 0.363, 0.447, 0.556, 0.513, 0.638, 0.617, 0.537, 0.55, 0.469, 0.471, 0.439, 0.406, 0.462, 0.489, 0.49, 0.481, 0.458, 0.44, 0.462, 0.454, 0.418, 0.393, 0.388, 0.387, 0.396, 0.38, 0.37, 0.367, 0.377, 0.392, 0.4, 0.37, 0.365, 0.385, 0.366, 0.345, 0.33, 0.329, 0.297, 0.329, 0.244, 0.21, 0.188, 0.145, 0.078, 0.019, 0.01, 0.006, 0.004, 0.004, 0.003, 0.003, 0.014, 0.12, 0.327, 0.458, 0.47, 0.529, 0.551, 0.505, 0.401, 0.38, 0.38, 0.379, 0.383, 0.362, 0.381, 0.366, 0.391, 0.407, 0.406, 0.414, 0.409, 0.402, 0.397, 0.397, 0.401, 0.417, 0.394, 0.412, 0.385, 0.328, 0.205, 0.178, 0.164, 0.139, 0.067, 0.016, 0.011, 0.005, 0.002, 0.001, 0.001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.001, 0.001, 0.046, 0.046, 0.068, 0.047, 0.067, 0.065, 0.05, 0.061, 0.09, 0.101, 0.135, 0.17, 0.235, 0.232, 0.247, 0.244, 0.237, 0.244, 0.248, 0.231, 0.242, 0.238, 0.23, 0.221, 0.223, 0.224, 0.217, 0.216, 0.215, 0.218, 0.22, 0.218, 0.2, 0.192, 0.188, 0.182, 0.172, 0.169, 0.199, 0.214, 0.266, 0.288, 0.292, 0.312, 0.296, 0.253, 0.16, 0.147, 0.13, 0.107, 0.089]</script>
+<canvas class="dwave" data-dur="4.934"></canvas>
+<script type="application/json" class="dpeaks">[0.0, 0.0, 0.0, 0.014, 0.022, 0.023, 0.013, 0.042, 0.067, 0.086, 0.083, 0.065, 0.045, 0.043, 0.043, 0.02, 0.021, 0.028, 0.017, 0.015, 0.01, 0.011, 0.014, 0.011, 0.012, 0.019, 0.022, 0.031, 0.033, 0.048, 0.026, 0.02, 0.024, 0.034, 0.038, 0.056, 0.054, 0.072, 0.051, 0.029, 0.034, 0.037, 0.037, 0.042, 0.053, 0.051, 0.036, 0.054, 0.063, 0.064, 0.039, 0.053, 0.054, 0.067, 0.07, 0.08, 0.17, 0.251, 0.162, 0.137, 0.061, 0.048, 0.07, 0.037, 0.049, 0.054, 0.051, 0.053, 0.029, 0.074, 0.07, 0.101, 0.081, 0.116, 0.291, 0.348, 0.384, 0.275, 0.145, 0.064, 0.136, 0.804, 0.97, 0.619, 0.789, 0.645, 0.405, 0.332, 0.369, 0.217, 0.156, 0.138, 0.065, 0.083, 0.102, 0.101, 0.066, 0.093, 0.09, 0.075, 0.072, 0.055, 0.038, 0.032, 0.079, 0.079, 0.065, 0.084, 0.093, 0.057, 0.044, 0.046, 0.04, 0.053, 0.056, 0.06, 0.104, 0.232, 0.306, 0.206, 0.134, 0.127, 0.09, 0.165, 0.16, 0.157, 0.093, 0.098, 0.058, 0.087, 0.085, 0.057, 0.096, 0.082, 0.092, 0.112, 0.13, 0.108, 0.081, 0.099, 0.128, 0.127, 0.126, 0.08, 0.119, 0.095, 0.099, 0.132, 0.104, 0.092, 0.119, 0.177, 0.181, 0.13, 0.221, 0.219, 0.178, 0.148, 0.21, 0.382, 0.426, 0.435, 0.333, 0.306, 0.404, 0.442, 0.667, 0.64, 0.417, 0.479, 0.446, 0.577, 0.437, 0.938, 0.714, 0.879, 0.757, 0.633, 0.843, 0.647, 0.344, 0.168, 0.174, 0.097, 0.091, 0.065, 0.084, 0.055, 0.114, 0.081, 0.156, 0.725, 1.0, 0.908, 0.959, 0.795, 0.948, 0.957, 0.924, 0.755, 0.837, 0.824, 0.721, 0.703, 0.652, 0.668, 0.706, 0.772, 0.784, 0.799, 0.79, 0.728, 0.803, 0.801, 0.823, 0.807, 0.781, 0.729, 0.721, 0.673, 0.504, 0.453, 0.41, 0.402, 0.216, 0.011, 0.008, 0.004, 0.002, 0.001, 0.001, 0.002, 0.001, 0.001, 0.006, 0.089, 0.204, 0.394, 0.584, 0.59, 0.311, 0.297, 0.261, 0.241, 0.234, 0.188, 0.164, 0.175, 0.202, 0.194, 0.177, 0.174, 0.18, 0.183, 0.163, 0.168, 0.162, 0.158, 0.159, 0.167, 0.169, 0.182, 0.169, 0.169, 0.162, 0.113, 0.075, 0.054, 0.04, 0.033, 0.017, 0.015, 0.007, 0.008, 0.008, 0.012, 0.013, 0.033, 0.057, 0.088, 0.11, 0.118, 0.136, 0.139, 0.15, 0.162, 0.182, 0.185, 0.219, 0.227, 0.255, 0.251, 0.282, 0.325, 0.369, 0.438, 0.405, 0.423, 0.389, 0.362, 0.323, 0.341, 0.372, 0.436, 0.449, 0.457, 0.479, 0.532, 0.593, 0.641, 0.681, 0.623, 0.511, 0.362, 0.319, 0.215, 0.237, 0.167, 0.152, 0.121, 0.146, 0.241, 0.224, 0.209, 0.229, 0.271, 0.35, 0.493, 0.603, 0.682, 0.725, 0.678, 0.684, 0.693, 0.636, 0.618, 0.626, 0.591, 0.615, 0.598, 0.548, 0.549, 0.494, 0.417, 0.406, 0.414, 0.414, 0.356, 0.372, 0.401, 0.459, 0.412, 0.357, 0.187, 0.121, 0.1, 0.045, 0.028, 0.007, 0.005, 0.004, 0.002, 0.002, 0.001, 0.0, 0.003, 0.08, 0.263, 0.232, 0.521, 0.703, 0.791, 0.723, 0.694, 0.622, 0.621, 0.578, 0.57, 0.499, 0.468, 0.444, 0.41, 0.336, 0.258, 0.141, 0.09, 0.038, 0.033, 0.028, 0.025, 0.025, 0.02, 0.016, 0.016, 0.011, 0.009, 0.009, 0.009, 0.008, 0.008, 0.007, 0.007, 0.007, 0.007, 0.011, 0.03, 0.04, 0.076, 0.142, 0.219, 0.292, 0.375, 0.453, 0.57, 0.684, 0.718, 0.709, 0.697, 0.637, 0.585, 0.551, 0.527, 0.502, 0.471, 0.457, 0.404, 0.38, 0.344, 0.343, 0.336, 0.328, 0.299, 0.259, 0.19, 0.09, 0.052, 0.034, 0.017, 0.008, 0.006, 0.006, 0.005, 0.005, 0.005, 0.004, 0.006, 0.021, 0.085, 0.363, 0.447, 0.556, 0.513, 0.638, 0.617, 0.537, 0.55, 0.469, 0.471, 0.439, 0.406, 0.462, 0.489, 0.49, 0.481, 0.458, 0.44, 0.462, 0.454, 0.418, 0.393, 0.388, 0.387, 0.396, 0.38, 0.37, 0.367, 0.377, 0.392, 0.4, 0.37, 0.365, 0.385, 0.366, 0.345, 0.33, 0.329, 0.297, 0.329, 0.244, 0.21, 0.188, 0.145, 0.078, 0.019, 0.01, 0.006, 0.004, 0.004, 0.003, 0.003, 0.014, 0.12, 0.327, 0.458, 0.47, 0.529, 0.551, 0.505, 0.401, 0.38, 0.38, 0.379, 0.383, 0.362, 0.381, 0.366, 0.391, 0.407, 0.406, 0.414, 0.409, 0.402, 0.397, 0.397, 0.401, 0.417, 0.394, 0.412, 0.385, 0.328, 0.205, 0.178, 0.164, 0.139, 0.067, 0.016, 0.011, 0.005, 0.002, 0.001, 0.001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.001, 0.001, 0.046, 0.046, 0.068, 0.047, 0.067, 0.065, 0.05, 0.061, 0.09, 0.101, 0.135, 0.17, 0.235, 0.232, 0.247, 0.244, 0.237, 0.244, 0.248, 0.231, 0.242, 0.238, 0.23, 0.221, 0.223, 0.224, 0.217, 0.216, 0.215, 0.218, 0.22, 0.218, 0.2, 0.192, 0.188, 0.182, 0.172, 0.169, 0.199, 0.214, 0.266, 0.288, 0.292, 0.312, 0.296, 0.253, 0.16, 0.147, 0.13, 0.107, 0.089]</script>
 <div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
-<div class="refrow"><span class="chip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="chip match" title="dei6 — correct"><span class="han">哋</span> dei6</span><span class="chip match" title="jiu3 — correct"><span class="han">要</span> jiu3</span><span class="chip match" title="heoi3 — correct"><span class="han">去</span> heoi3</span><span class="chip match" title="gung1 — correct"><span class="han">公</span> gung1</span><span class="chip sub" title="jyun5 — wrong"><span class="han">園</span> jyun5</span><span class="chip sub" title="waan2 — wrong"><span class="han">玩</span> waan2</span><span class="chip sub" title="waat6 — wrong"><span class="han">滑</span> waat6</span><span class="chip sub" title="tai1 — wrong"><span class="han">梯</span> tai1</span></div>
+<div class="drefrow"><span class="dchip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="dchip match" title="dei6 — correct"><span class="han">哋</span> dei6</span><span class="dchip match" title="jiu3 — correct"><span class="han">要</span> jiu3</span><span class="dchip match" title="heoi3 — correct"><span class="han">去</span> heoi3</span><span class="dchip match" title="gung1 — correct"><span class="han">公</span> gung1</span><span class="dchip sub" title="jyun5 — wrong"><span class="han">園</span> jyun5</span><span class="dchip sub" title="waan2 — wrong"><span class="han">玩</span> waan2</span><span class="dchip sub" title="waat6 — wrong"><span class="han">滑</span> waat6</span><span class="dchip sub" title="tai1 — wrong"><span class="han">梯</span> tai1</span></div>
 <div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box or the waveform to hear it):</div>
-<div class="tier"><div class="box match" data-start="1.64" data-end="1.89" style="left:33.24%;width:5.07%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="box match" data-start="1.89" data-end="2.25" style="left:38.31%;width:7.30%;border-top-color:#555555" title="dei6 conf 100% — click to play">dei6<small>100%</small></div><div class="box match" data-start="2.25" data-end="2.65" style="left:45.60%;width:8.11%;border-top-color:#4daf4a" title="jiu3 conf 100% — click to play">jiu3<small>100%</small></div><div class="box match" data-start="2.65" data-end="3.01" style="left:53.71%;width:7.30%;border-top-color:#4daf4a" title="heoi3 conf 100% — click to play">heoi3<small>100%</small></div><div class="box match" data-start="3.01" data-end="3.33" style="left:61.01%;width:6.49%;border-top-color:#e41a1c" title="gung1 conf 100% — click to play">gung1<small>100%</small></div><div class="box sub" data-start="3.33" data-end="3.61" style="left:67.49%;width:5.67%;border-top-color:#ff7f00" title="jyu5 conf 57% alt: jyu6(0.35), jyu4(0.04) — click to play">jyu5<small>57%</small></div><div class="box sub" data-start="3.61" data-end="4.05" style="left:73.17%;width:8.92%;border-top-color:#377eb8" title="waa2 conf 93% alt: waa6(0.07) — click to play">waa2<small>93%</small></div><div class="box sub" data-start="4.05" data-end="4.49" style="left:82.08%;width:8.92%;border-top-color:#555555" title="waak6 conf 98% alt: waa6(0.01) — click to play">waak6<small>98%</small></div><div class="box sub" data-start="4.49" data-end="4.93" style="left:91.00%;width:8.92%;border-top-color:#4daf4a" title="taai3 conf 70% alt: taai1(0.29) — click to play">taai3<small>70%</small></div></div>
+<div class="dtier"><div class="dbox match" data-start="1.64" data-end="1.89" style="left:33.24%;width:5.07%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="dbox match" data-start="1.89" data-end="2.25" style="left:38.31%;width:7.30%;border-top-color:#555555" title="dei6 conf 100% — click to play">dei6<small>100%</small></div><div class="dbox match" data-start="2.25" data-end="2.65" style="left:45.60%;width:8.11%;border-top-color:#4daf4a" title="jiu3 conf 100% — click to play">jiu3<small>100%</small></div><div class="dbox match" data-start="2.65" data-end="3.01" style="left:53.71%;width:7.30%;border-top-color:#4daf4a" title="heoi3 conf 100% — click to play">heoi3<small>100%</small></div><div class="dbox match" data-start="3.01" data-end="3.33" style="left:61.01%;width:6.49%;border-top-color:#e41a1c" title="gung1 conf 100% — click to play">gung1<small>100%</small></div><div class="dbox sub" data-start="3.33" data-end="3.61" style="left:67.49%;width:5.67%;border-top-color:#ff7f00" title="jyu5 conf 57% alt: jyu6(0.35), jyu4(0.04) — click to play">jyu5<small>57%</small></div><div class="dbox sub" data-start="3.61" data-end="4.05" style="left:73.17%;width:8.92%;border-top-color:#377eb8" title="waa2 conf 93% alt: waa6(0.07) — click to play">waa2<small>93%</small></div><div class="dbox sub" data-start="4.05" data-end="4.49" style="left:82.08%;width:8.92%;border-top-color:#555555" title="waak6 conf 98% alt: waa6(0.01) — click to play">waak6<small>98%</small></div><div class="dbox sub" data-start="4.49" data-end="4.93" style="left:91.00%;width:8.92%;border-top-color:#4daf4a" title="taai3 conf 70% alt: taai1(0.29) — click to play">taai3<small>70%</small></div></div>
 </section>
 
-<section class="demo" id="spk_s02__env_unknown__prompt_mtr_03__take_01">
+<section class="ddemo" id="spk_s02__env_unknown__prompt_mtr_03__take_01">
 <h3>spk_s02__env_unknown__prompt_mtr_03__take_01</h3>
 <p class="muted">unknown · ref mtr_03 ·
 syllable error rate 0.364 · duration 5.35s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
 <audio controls preload="metadata" src="assets/spk_s02__env_unknown__prompt_mtr_03__take_01.wav"></audio>
-<canvas class="wave" data-dur="5.354"></canvas>
-<script type="application/json" class="peaks">[0.0, 0.0, 0.001, 0.021, 0.03, 0.034, 0.041, 0.03, 0.068, 0.058, 0.074, 0.075, 0.047, 0.061, 0.081, 0.106, 0.072, 0.151, 0.104, 0.108, 0.088, 0.12, 0.112, 0.129, 0.163, 0.146, 0.194, 0.198, 0.215, 0.132, 0.145, 0.146, 0.148, 0.123, 0.174, 0.162, 0.171, 0.119, 0.181, 0.2, 0.206, 0.261, 0.179, 0.178, 0.149, 0.183, 0.173, 0.338, 0.284, 0.175, 0.213, 0.217, 0.325, 0.118, 0.221, 0.198, 0.159, 0.143, 0.211, 0.18, 0.278, 0.295, 0.261, 0.288, 0.225, 0.212, 0.128, 0.092, 0.141, 0.112, 0.126, 0.182, 0.174, 0.459, 0.898, 0.468, 0.367, 0.27, 0.173, 0.148, 0.152, 0.092, 0.083, 0.071, 0.089, 0.079, 0.17, 0.16, 0.118, 0.114, 0.12, 0.182, 0.114, 0.134, 0.518, 1.0, 0.865, 0.63, 0.383, 0.774, 0.977, 0.83, 0.851, 0.879, 0.82, 0.77, 0.75, 0.61, 0.566, 0.577, 0.739, 0.619, 0.615, 0.657, 0.603, 0.71, 0.635, 0.64, 0.618, 0.649, 0.597, 0.607, 0.547, 0.55, 0.639, 0.614, 0.616, 0.286, 0.154, 0.116, 0.117, 0.076, 0.038, 0.03, 0.029, 0.032, 0.049, 0.062, 0.047, 0.055, 0.124, 0.204, 0.171, 0.217, 0.521, 0.77, 0.828, 0.725, 0.683, 0.599, 0.634, 0.623, 0.581, 0.551, 0.605, 0.647, 0.567, 0.671, 0.65, 0.561, 0.513, 0.506, 0.551, 0.508, 0.501, 0.405, 0.479, 0.55, 0.594, 0.488, 0.399, 0.417, 0.543, 0.55, 0.262, 0.196, 0.095, 0.083, 0.085, 0.059, 0.042, 0.031, 0.034, 0.032, 0.031, 0.046, 0.044, 0.174, 0.694, 0.532, 0.414, 0.554, 0.567, 0.523, 0.535, 0.489, 0.497, 0.443, 0.496, 0.442, 0.432, 0.369, 0.37, 0.323, 0.331, 0.29, 0.305, 0.325, 0.336, 0.245, 0.215, 0.155, 0.099, 0.047, 0.067, 0.058, 0.047, 0.039, 0.06, 0.155, 0.152, 0.087, 0.052, 0.027, 0.018, 0.012, 0.016, 0.023, 0.411, 0.378, 0.467, 0.492, 0.458, 0.458, 0.48, 0.507, 0.481, 0.433, 0.481, 0.458, 0.381, 0.396, 0.385, 0.393, 0.323, 0.328, 0.316, 0.331, 0.334, 0.324, 0.34, 0.266, 0.252, 0.195, 0.117, 0.085, 0.061, 0.064, 0.055, 0.042, 0.047, 0.04, 0.04, 0.034, 0.021, 0.023, 0.026, 0.031, 0.038, 0.035, 0.031, 0.035, 0.044, 0.043, 0.03, 0.05, 0.044, 0.036, 0.041, 0.041, 0.062, 0.097, 0.14, 0.146, 0.146, 0.131, 0.096, 0.096, 0.077, 0.061, 0.055, 0.056, 0.047, 0.073, 0.072, 0.074, 0.069, 0.07, 0.065, 0.09, 0.08, 0.093, 0.105, 0.123, 0.11, 0.107, 0.12, 0.106, 0.099, 0.098, 0.092, 0.082, 0.067, 0.032, 0.019, 0.011, 0.015, 0.055, 0.048, 0.117, 0.275, 0.29, 0.198, 0.185, 0.161, 0.313, 0.333, 0.332, 0.5, 0.462, 0.456, 0.483, 0.475, 0.511, 0.497, 0.46, 0.421, 0.417, 0.468, 0.491, 0.447, 0.465, 0.458, 0.458, 0.48, 0.466, 0.465, 0.419, 0.409, 0.354, 0.245, 0.276, 0.215, 0.23, 0.156, 0.135, 0.126, 0.143, 0.145, 0.195, 0.251, 0.24, 0.286, 0.372, 0.395, 0.428, 0.458, 0.304, 0.267, 0.144, 0.092, 0.098, 0.102, 0.08, 0.094, 0.067, 0.059, 0.044, 0.044, 0.03, 0.031, 0.035, 0.036, 0.038, 0.036, 0.05, 0.037, 0.029, 0.039, 0.05, 0.087, 0.069, 0.149, 0.152, 0.28, 0.457, 0.26, 0.262, 0.276, 0.569, 0.626, 0.445, 0.356, 0.351, 0.334, 0.342, 0.378, 0.365, 0.388, 0.441, 0.418, 0.315, 0.31, 0.291, 0.285, 0.304, 0.259, 0.194, 0.167, 0.126, 0.124, 0.103, 0.087, 0.111, 0.111, 0.1, 0.101, 0.105, 0.083, 0.069, 0.071, 0.077, 0.089, 0.071, 0.049, 0.052, 0.077, 0.053, 0.069, 0.086, 0.067, 0.047, 0.048, 0.058, 0.063, 0.058, 0.036, 0.026, 0.043, 0.123, 0.161, 0.198, 0.214, 0.203, 0.189, 0.188, 0.193, 0.207, 0.187, 0.215, 0.201, 0.187, 0.192, 0.172, 0.161, 0.133, 0.141, 0.096, 0.06, 0.039, 0.048, 0.04, 0.049, 0.044, 0.051, 0.038, 0.031, 0.022, 0.022, 0.043, 0.094, 0.166, 0.197, 0.192, 0.165, 0.161, 0.148, 0.096, 0.061, 0.023, 0.011, 0.007, 0.007, 0.009, 0.009, 0.012, 0.008, 0.007, 0.008, 0.008, 0.007, 0.006, 0.006, 0.007, 0.006, 0.011, 0.01, 0.009, 0.009, 0.027, 0.096, 0.035, 0.046, 0.061, 0.07, 0.089, 0.095, 0.14, 0.118, 0.111, 0.078, 0.067, 0.067, 0.204, 0.219, 0.267, 0.283, 0.282, 0.249, 0.251, 0.263, 0.215, 0.203, 0.294, 0.303, 0.122, 0.016, 0.015, 0.016, 0.009, 0.01, 0.008, 0.007, 0.008, 0.009, 0.009, 0.011, 0.009, 0.011, 0.016, 0.013, 0.009, 0.008, 0.011, 0.007, 0.017, 0.009, 0.012, 0.009, 0.011, 0.011, 0.009, 0.009, 0.012, 0.014, 0.013, 0.014, 0.011, 0.013, 0.014, 0.017, 0.012, 0.012, 0.011, 0.012, 0.012, 0.012, 0.013, 0.01, 0.012, 0.008, 0.011, 0.011, 0.014, 0.013, 0.01, 0.01, 0.016, 0.008, 0.013, 0.015, 0.011, 0.014, 0.014, 0.011, 0.014, 0.013, 0.009, 0.01, 0.013]</script>
+<canvas class="dwave" data-dur="5.354"></canvas>
+<script type="application/json" class="dpeaks">[0.0, 0.0, 0.001, 0.021, 0.03, 0.034, 0.041, 0.03, 0.068, 0.058, 0.074, 0.075, 0.047, 0.061, 0.081, 0.106, 0.072, 0.151, 0.104, 0.108, 0.088, 0.12, 0.112, 0.129, 0.163, 0.146, 0.194, 0.198, 0.215, 0.132, 0.145, 0.146, 0.148, 0.123, 0.174, 0.162, 0.171, 0.119, 0.181, 0.2, 0.206, 0.261, 0.179, 0.178, 0.149, 0.183, 0.173, 0.338, 0.284, 0.175, 0.213, 0.217, 0.325, 0.118, 0.221, 0.198, 0.159, 0.143, 0.211, 0.18, 0.278, 0.295, 0.261, 0.288, 0.225, 0.212, 0.128, 0.092, 0.141, 0.112, 0.126, 0.182, 0.174, 0.459, 0.898, 0.468, 0.367, 0.27, 0.173, 0.148, 0.152, 0.092, 0.083, 0.071, 0.089, 0.079, 0.17, 0.16, 0.118, 0.114, 0.12, 0.182, 0.114, 0.134, 0.518, 1.0, 0.865, 0.63, 0.383, 0.774, 0.977, 0.83, 0.851, 0.879, 0.82, 0.77, 0.75, 0.61, 0.566, 0.577, 0.739, 0.619, 0.615, 0.657, 0.603, 0.71, 0.635, 0.64, 0.618, 0.649, 0.597, 0.607, 0.547, 0.55, 0.639, 0.614, 0.616, 0.286, 0.154, 0.116, 0.117, 0.076, 0.038, 0.03, 0.029, 0.032, 0.049, 0.062, 0.047, 0.055, 0.124, 0.204, 0.171, 0.217, 0.521, 0.77, 0.828, 0.725, 0.683, 0.599, 0.634, 0.623, 0.581, 0.551, 0.605, 0.647, 0.567, 0.671, 0.65, 0.561, 0.513, 0.506, 0.551, 0.508, 0.501, 0.405, 0.479, 0.55, 0.594, 0.488, 0.399, 0.417, 0.543, 0.55, 0.262, 0.196, 0.095, 0.083, 0.085, 0.059, 0.042, 0.031, 0.034, 0.032, 0.031, 0.046, 0.044, 0.174, 0.694, 0.532, 0.414, 0.554, 0.567, 0.523, 0.535, 0.489, 0.497, 0.443, 0.496, 0.442, 0.432, 0.369, 0.37, 0.323, 0.331, 0.29, 0.305, 0.325, 0.336, 0.245, 0.215, 0.155, 0.099, 0.047, 0.067, 0.058, 0.047, 0.039, 0.06, 0.155, 0.152, 0.087, 0.052, 0.027, 0.018, 0.012, 0.016, 0.023, 0.411, 0.378, 0.467, 0.492, 0.458, 0.458, 0.48, 0.507, 0.481, 0.433, 0.481, 0.458, 0.381, 0.396, 0.385, 0.393, 0.323, 0.328, 0.316, 0.331, 0.334, 0.324, 0.34, 0.266, 0.252, 0.195, 0.117, 0.085, 0.061, 0.064, 0.055, 0.042, 0.047, 0.04, 0.04, 0.034, 0.021, 0.023, 0.026, 0.031, 0.038, 0.035, 0.031, 0.035, 0.044, 0.043, 0.03, 0.05, 0.044, 0.036, 0.041, 0.041, 0.062, 0.097, 0.14, 0.146, 0.146, 0.131, 0.096, 0.096, 0.077, 0.061, 0.055, 0.056, 0.047, 0.073, 0.072, 0.074, 0.069, 0.07, 0.065, 0.09, 0.08, 0.093, 0.105, 0.123, 0.11, 0.107, 0.12, 0.106, 0.099, 0.098, 0.092, 0.082, 0.067, 0.032, 0.019, 0.011, 0.015, 0.055, 0.048, 0.117, 0.275, 0.29, 0.198, 0.185, 0.161, 0.313, 0.333, 0.332, 0.5, 0.462, 0.456, 0.483, 0.475, 0.511, 0.497, 0.46, 0.421, 0.417, 0.468, 0.491, 0.447, 0.465, 0.458, 0.458, 0.48, 0.466, 0.465, 0.419, 0.409, 0.354, 0.245, 0.276, 0.215, 0.23, 0.156, 0.135, 0.126, 0.143, 0.145, 0.195, 0.251, 0.24, 0.286, 0.372, 0.395, 0.428, 0.458, 0.304, 0.267, 0.144, 0.092, 0.098, 0.102, 0.08, 0.094, 0.067, 0.059, 0.044, 0.044, 0.03, 0.031, 0.035, 0.036, 0.038, 0.036, 0.05, 0.037, 0.029, 0.039, 0.05, 0.087, 0.069, 0.149, 0.152, 0.28, 0.457, 0.26, 0.262, 0.276, 0.569, 0.626, 0.445, 0.356, 0.351, 0.334, 0.342, 0.378, 0.365, 0.388, 0.441, 0.418, 0.315, 0.31, 0.291, 0.285, 0.304, 0.259, 0.194, 0.167, 0.126, 0.124, 0.103, 0.087, 0.111, 0.111, 0.1, 0.101, 0.105, 0.083, 0.069, 0.071, 0.077, 0.089, 0.071, 0.049, 0.052, 0.077, 0.053, 0.069, 0.086, 0.067, 0.047, 0.048, 0.058, 0.063, 0.058, 0.036, 0.026, 0.043, 0.123, 0.161, 0.198, 0.214, 0.203, 0.189, 0.188, 0.193, 0.207, 0.187, 0.215, 0.201, 0.187, 0.192, 0.172, 0.161, 0.133, 0.141, 0.096, 0.06, 0.039, 0.048, 0.04, 0.049, 0.044, 0.051, 0.038, 0.031, 0.022, 0.022, 0.043, 0.094, 0.166, 0.197, 0.192, 0.165, 0.161, 0.148, 0.096, 0.061, 0.023, 0.011, 0.007, 0.007, 0.009, 0.009, 0.012, 0.008, 0.007, 0.008, 0.008, 0.007, 0.006, 0.006, 0.007, 0.006, 0.011, 0.01, 0.009, 0.009, 0.027, 0.096, 0.035, 0.046, 0.061, 0.07, 0.089, 0.095, 0.14, 0.118, 0.111, 0.078, 0.067, 0.067, 0.204, 0.219, 0.267, 0.283, 0.282, 0.249, 0.251, 0.263, 0.215, 0.203, 0.294, 0.303, 0.122, 0.016, 0.015, 0.016, 0.009, 0.01, 0.008, 0.007, 0.008, 0.009, 0.009, 0.011, 0.009, 0.011, 0.016, 0.013, 0.009, 0.008, 0.011, 0.007, 0.017, 0.009, 0.012, 0.009, 0.011, 0.011, 0.009, 0.009, 0.012, 0.014, 0.013, 0.014, 0.011, 0.013, 0.014, 0.017, 0.012, 0.012, 0.011, 0.012, 0.012, 0.012, 0.013, 0.01, 0.012, 0.008, 0.011, 0.011, 0.014, 0.013, 0.01, 0.01, 0.016, 0.008, 0.013, 0.015, 0.011, 0.014, 0.014, 0.011, 0.014, 0.013, 0.009, 0.01, 0.013]</script>
 <div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
-<div class="refrow"><span class="chip sub" title="ze6 — wrong"><span class="han">姐</span> ze6</span><span class="chip match" title="ze1 — correct"><span class="han">姐</span> ze1</span><span class="chip sub" title="bong1 — wrong"><span class="han">幫</span> bong1</span><span class="chip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="chip match" title="zin2 — correct"><span class="han">剪</span> zin2</span><span class="chip match" title="zo2 — correct"><span class="han">咗</span> zo2</span><span class="chip match" title="jat1 — correct"><span class="han">一</span> jat1</span><span class="chip match" title="zoeng1 — correct"><span class="han">張</span> zoeng1</span><span class="chip sub" title="saan1 — wrong"><span class="han">生</span> saan1</span><span class="chip match" title="jat6 — correct"><span class="han">日</span> jat6</span><span class="chip sub" title="kaat1 — wrong"><span class="han">卡</span> kaat1</span></div>
+<div class="drefrow"><span class="dchip sub" title="ze6 — wrong"><span class="han">姐</span> ze6</span><span class="dchip match" title="ze1 — correct"><span class="han">姐</span> ze1</span><span class="dchip sub" title="bong1 — wrong"><span class="han">幫</span> bong1</span><span class="dchip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="dchip match" title="zin2 — correct"><span class="han">剪</span> zin2</span><span class="dchip match" title="zo2 — correct"><span class="han">咗</span> zo2</span><span class="dchip match" title="jat1 — correct"><span class="han">一</span> jat1</span><span class="dchip match" title="zoeng1 — correct"><span class="han">張</span> zoeng1</span><span class="dchip sub" title="saan1 — wrong"><span class="han">生</span> saan1</span><span class="dchip match" title="jat6 — correct"><span class="han">日</span> jat6</span><span class="dchip sub" title="kaat1 — wrong"><span class="han">卡</span> kaat1</span></div>
 <div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box or the waveform to hear it):</div>
-<div class="tier"><div class="box sub" data-start="0.96" data-end="1.21" style="left:17.93%;width:4.67%;border-top-color:#984ea3" title="ze4 conf 64% alt: ze6(0.35) — click to play">ze4<small>64%</small></div><div class="box match" data-start="1.21" data-end="1.61" style="left:22.60%;width:7.47%;border-top-color:#e41a1c" title="ze1 conf 100% — click to play">ze1<small>100%</small></div><div class="box sub" data-start="1.61" data-end="1.97" style="left:30.07%;width:6.72%;border-top-color:#e41a1c" title="fon1 conf 93% alt: fong1(0.07) — click to play">fon1<small>93%</small></div><div class="box match" data-start="1.97" data-end="2.33" style="left:36.79%;width:6.72%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="box match" data-start="2.33" data-end="2.77" style="left:43.52%;width:8.22%;border-top-color:#377eb8" title="zin2 conf 100% — click to play">zin2<small>100%</small></div><div class="box match" data-start="2.77" data-end="3.17" style="left:51.74%;width:7.47%;border-top-color:#377eb8" title="zo2 conf 100% — click to play">zo2<small>100%</small></div><div class="box match" data-start="3.17" data-end="3.49" style="left:59.21%;width:5.98%;border-top-color:#e41a1c" title="jat1 conf 100% — click to play">jat1<small>100%</small></div><div class="box match" data-start="3.49" data-end="3.93" style="left:65.18%;width:8.22%;border-top-color:#e41a1c" title="zoeng1 conf 100% — click to play">zoeng1<small>100%</small></div><div class="box sub" data-start="3.93" data-end="4.29" style="left:73.40%;width:6.72%;border-top-color:#e41a1c" title="saang1 conf 100% — click to play">saang1<small>100%</small></div><div class="box match" data-start="4.29" data-end="4.38" style="left:80.13%;width:1.68%;border-top-color:#555555" title="jat6 conf 100% — click to play">jat6<small>100%</small></div><div class="box sub" data-start="4.53" data-end="4.81" style="left:84.61%;width:5.23%;border-top-color:#e41a1c" title="kaak1 conf 98% alt: kaat1(0.02) — click to play">kaak1<small>98%</small></div></div>
+<div class="dtier"><div class="dbox sub" data-start="0.96" data-end="1.21" style="left:17.93%;width:4.67%;border-top-color:#984ea3" title="ze4 conf 64% alt: ze6(0.35) — click to play">ze4<small>64%</small></div><div class="dbox match" data-start="1.21" data-end="1.61" style="left:22.60%;width:7.47%;border-top-color:#e41a1c" title="ze1 conf 100% — click to play">ze1<small>100%</small></div><div class="dbox sub" data-start="1.61" data-end="1.97" style="left:30.07%;width:6.72%;border-top-color:#e41a1c" title="fon1 conf 93% alt: fong1(0.07) — click to play">fon1<small>93%</small></div><div class="dbox match" data-start="1.97" data-end="2.33" style="left:36.79%;width:6.72%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="dbox match" data-start="2.33" data-end="2.77" style="left:43.52%;width:8.22%;border-top-color:#377eb8" title="zin2 conf 100% — click to play">zin2<small>100%</small></div><div class="dbox match" data-start="2.77" data-end="3.17" style="left:51.74%;width:7.47%;border-top-color:#377eb8" title="zo2 conf 100% — click to play">zo2<small>100%</small></div><div class="dbox match" data-start="3.17" data-end="3.49" style="left:59.21%;width:5.98%;border-top-color:#e41a1c" title="jat1 conf 100% — click to play">jat1<small>100%</small></div><div class="dbox match" data-start="3.49" data-end="3.93" style="left:65.18%;width:8.22%;border-top-color:#e41a1c" title="zoeng1 conf 100% — click to play">zoeng1<small>100%</small></div><div class="dbox sub" data-start="3.93" data-end="4.29" style="left:73.40%;width:6.72%;border-top-color:#e41a1c" title="saang1 conf 100% — click to play">saang1<small>100%</small></div><div class="dbox match" data-start="4.29" data-end="4.38" style="left:80.13%;width:1.68%;border-top-color:#555555" title="jat6 conf 100% — click to play">jat6<small>100%</small></div><div class="dbox sub" data-start="4.53" data-end="4.81" style="left:84.61%;width:5.23%;border-top-color:#e41a1c" title="kaak1 conf 98% alt: kaat1(0.02) — click to play">kaak1<small>98%</small></div></div>
 </section>
 
-<section class="demo" id="spk_s01__env_iphone_far__prompt_mtr_05__take_01">
+<section class="ddemo" id="spk_s01__env_iphone_far__prompt_mtr_05__take_01">
 <h3>spk_s01__env_iphone_far__prompt_mtr_05__take_01</h3>
 <p class="muted">iphone_far · ref mtr_05 ·
 syllable error rate 0.222 · duration 3.65s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
 <audio controls preload="metadata" src="assets/spk_s01__env_iphone_far__prompt_mtr_05__take_01.wav"></audio>
-<canvas class="wave" data-dur="3.654"></canvas>
-<script type="application/json" class="peaks">[0.0, 0.0, 0.0, 0.0, 0.002, 0.003, 0.003, 0.047, 0.051, 0.013, 0.008, 0.009, 0.008, 0.009, 0.009, 0.01, 0.01, 0.009, 0.01, 0.01, 0.013, 0.014, 0.017, 0.016, 0.014, 0.017, 0.018, 0.02, 0.023, 0.021, 0.024, 0.026, 0.018, 0.025, 0.019, 0.03, 0.022, 0.024, 0.026, 0.029, 0.045, 0.03, 0.037, 0.042, 0.044, 0.043, 0.058, 0.044, 0.038, 0.041, 0.044, 0.031, 0.058, 0.043, 0.035, 0.048, 0.04, 0.05, 0.049, 0.032, 0.056, 0.049, 0.049, 0.046, 0.05, 0.056, 0.087, 0.034, 0.054, 0.038, 0.057, 0.076, 0.056, 0.059, 0.068, 0.048, 0.057, 0.067, 0.054, 0.055, 0.056, 0.063, 0.053, 0.062, 0.051, 0.056, 0.058, 0.062, 0.063, 0.062, 0.091, 0.058, 0.058, 0.076, 0.078, 0.128, 0.1, 0.084, 0.062, 0.084, 0.085, 0.069, 0.071, 0.067, 0.078, 0.066, 0.058, 0.068, 0.096, 0.083, 0.062, 0.108, 0.06, 0.078, 0.075, 0.099, 0.122, 0.124, 0.105, 0.108, 0.121, 0.083, 0.077, 0.087, 0.141, 0.144, 0.109, 0.108, 0.182, 0.175, 0.184, 0.174, 0.261, 0.242, 0.178, 0.182, 0.207, 0.141, 0.23, 0.229, 0.456, 0.43, 0.6, 0.5, 0.417, 0.309, 0.234, 0.22, 0.26, 0.262, 0.188, 0.229, 0.204, 0.265, 0.256, 0.181, 0.266, 0.27, 0.241, 0.271, 0.3, 0.251, 0.216, 0.202, 0.21, 0.19, 0.156, 0.196, 0.22, 0.221, 0.213, 0.2, 0.159, 0.212, 0.209, 0.21, 0.196, 0.214, 0.164, 0.174, 0.13, 0.112, 0.102, 0.141, 0.412, 0.217, 0.137, 0.095, 0.094, 0.082, 0.091, 0.357, 0.525, 0.758, 0.957, 0.886, 1.0, 0.94, 0.865, 0.747, 0.725, 0.664, 0.575, 0.581, 0.584, 0.586, 0.445, 0.551, 0.464, 0.527, 0.496, 0.412, 0.603, 0.51, 0.443, 0.36, 0.341, 0.362, 0.468, 0.463, 0.463, 0.4, 0.422, 0.388, 0.457, 0.366, 0.238, 0.111, 0.118, 0.066, 0.077, 0.066, 0.184, 0.153, 0.13, 0.074, 0.074, 0.086, 0.091, 0.088, 0.1, 0.089, 0.079, 0.069, 0.091, 0.124, 0.202, 0.198, 0.232, 0.213, 0.236, 0.235, 0.204, 0.099, 0.133, 0.141, 0.108, 0.172, 0.121, 0.117, 0.101, 0.097, 0.113, 0.077, 0.096, 0.096, 0.094, 0.076, 0.084, 0.068, 0.082, 0.08, 0.044, 0.065, 0.063, 0.087, 0.078, 0.068, 0.066, 0.034, 0.039, 0.056, 0.076, 0.11, 0.067, 0.094, 0.123, 0.143, 0.096, 0.102, 0.098, 0.071, 0.065, 0.107, 0.166, 0.098, 0.111, 0.141, 0.134, 0.148, 0.135, 0.114, 0.09, 0.144, 0.106, 0.178, 0.171, 0.176, 0.221, 0.198, 0.238, 0.221, 0.203, 0.183, 0.178, 0.156, 0.155, 0.165, 0.175, 0.165, 0.146, 0.159, 0.145, 0.122, 0.184, 0.154, 0.131, 0.109, 0.11, 0.091, 0.118, 0.081, 0.102, 0.098, 0.091, 0.076, 0.079, 0.061, 0.047, 0.055, 0.058, 0.14, 0.084, 0.061, 0.281, 0.248, 0.297, 0.255, 0.337, 0.314, 0.4, 0.352, 0.315, 0.272, 0.286, 0.249, 0.257, 0.295, 0.29, 0.292, 0.226, 0.251, 0.259, 0.265, 0.215, 0.18, 0.134, 0.112, 0.12, 0.106, 0.076, 0.055, 0.053, 0.048, 0.044, 0.042, 0.056, 0.046, 0.056, 0.076, 0.039, 0.044, 0.035, 0.044, 0.054, 0.038, 0.038, 0.045, 0.05, 0.046, 0.045, 0.103, 0.198, 0.163, 0.154, 0.189, 0.128, 0.161, 0.121, 0.131, 0.185, 0.113, 0.11, 0.137, 0.131, 0.127, 0.147, 0.113, 0.115, 0.108, 0.064, 0.081, 0.075, 0.07, 0.064, 0.071, 0.059, 0.065, 0.052, 0.05, 0.047, 0.091, 0.069, 0.052, 0.053, 0.044, 0.058, 0.066, 0.052, 0.045, 0.051, 0.048, 0.048, 0.067, 0.057, 0.082, 0.066, 0.047, 0.068, 0.061, 0.067, 0.069, 0.068, 0.074, 0.105, 0.118, 0.104, 0.122, 0.16, 0.111, 0.11, 0.124, 0.154, 0.188, 0.201, 0.245, 0.248, 0.254, 0.266, 0.204, 0.203, 0.143, 0.12, 0.078, 0.055, 0.059, 0.055, 0.068, 0.041, 0.057, 0.05, 0.043, 0.264, 0.154, 0.098, 0.166, 0.094, 0.088, 0.085, 0.063, 0.072, 0.091, 0.09, 0.061, 0.07, 0.06, 0.066, 0.068, 0.065, 0.059, 0.089, 0.122, 0.149, 0.145, 0.142, 0.181, 0.204, 0.18, 0.2, 0.214, 0.211, 0.219, 0.149, 0.13, 0.121, 0.134, 0.14, 0.127, 0.147, 0.154, 0.166, 0.135, 0.155, 0.123, 0.13, 0.14, 0.137, 0.139, 0.09, 0.138, 0.165, 0.126, 0.142, 0.098, 0.061, 0.101, 0.096, 0.079, 0.088, 0.101, 0.09, 0.102, 0.084, 0.104, 0.092, 0.108, 0.102, 0.116, 0.137, 0.105, 0.123, 0.106, 0.172, 0.114, 0.112, 0.145, 0.124, 0.136, 0.104, 0.129, 0.158, 0.107, 0.103, 0.148, 0.127, 0.118, 0.09, 0.107, 0.066, 0.11, 0.086, 0.103, 0.1, 0.078, 0.075, 0.068, 0.061, 0.052, 0.049, 0.064, 0.076, 0.052, 0.047, 0.074, 0.056, 0.038, 0.043, 0.061, 0.041, 0.052, 0.049, 0.046, 0.042, 0.043, 0.057, 0.054, 0.052, 0.059, 0.058, 0.07, 0.052, 0.064, 0.064, 0.066, 0.07, 0.042, 0.065, 0.051, 0.053, 0.082]</script>
+<canvas class="dwave" data-dur="3.654"></canvas>
+<script type="application/json" class="dpeaks">[0.0, 0.0, 0.0, 0.0, 0.002, 0.003, 0.003, 0.047, 0.051, 0.013, 0.008, 0.009, 0.008, 0.009, 0.009, 0.01, 0.01, 0.009, 0.01, 0.01, 0.013, 0.014, 0.017, 0.016, 0.014, 0.017, 0.018, 0.02, 0.023, 0.021, 0.024, 0.026, 0.018, 0.025, 0.019, 0.03, 0.022, 0.024, 0.026, 0.029, 0.045, 0.03, 0.037, 0.042, 0.044, 0.043, 0.058, 0.044, 0.038, 0.041, 0.044, 0.031, 0.058, 0.043, 0.035, 0.048, 0.04, 0.05, 0.049, 0.032, 0.056, 0.049, 0.049, 0.046, 0.05, 0.056, 0.087, 0.034, 0.054, 0.038, 0.057, 0.076, 0.056, 0.059, 0.068, 0.048, 0.057, 0.067, 0.054, 0.055, 0.056, 0.063, 0.053, 0.062, 0.051, 0.056, 0.058, 0.062, 0.063, 0.062, 0.091, 0.058, 0.058, 0.076, 0.078, 0.128, 0.1, 0.084, 0.062, 0.084, 0.085, 0.069, 0.071, 0.067, 0.078, 0.066, 0.058, 0.068, 0.096, 0.083, 0.062, 0.108, 0.06, 0.078, 0.075, 0.099, 0.122, 0.124, 0.105, 0.108, 0.121, 0.083, 0.077, 0.087, 0.141, 0.144, 0.109, 0.108, 0.182, 0.175, 0.184, 0.174, 0.261, 0.242, 0.178, 0.182, 0.207, 0.141, 0.23, 0.229, 0.456, 0.43, 0.6, 0.5, 0.417, 0.309, 0.234, 0.22, 0.26, 0.262, 0.188, 0.229, 0.204, 0.265, 0.256, 0.181, 0.266, 0.27, 0.241, 0.271, 0.3, 0.251, 0.216, 0.202, 0.21, 0.19, 0.156, 0.196, 0.22, 0.221, 0.213, 0.2, 0.159, 0.212, 0.209, 0.21, 0.196, 0.214, 0.164, 0.174, 0.13, 0.112, 0.102, 0.141, 0.412, 0.217, 0.137, 0.095, 0.094, 0.082, 0.091, 0.357, 0.525, 0.758, 0.957, 0.886, 1.0, 0.94, 0.865, 0.747, 0.725, 0.664, 0.575, 0.581, 0.584, 0.586, 0.445, 0.551, 0.464, 0.527, 0.496, 0.412, 0.603, 0.51, 0.443, 0.36, 0.341, 0.362, 0.468, 0.463, 0.463, 0.4, 0.422, 0.388, 0.457, 0.366, 0.238, 0.111, 0.118, 0.066, 0.077, 0.066, 0.184, 0.153, 0.13, 0.074, 0.074, 0.086, 0.091, 0.088, 0.1, 0.089, 0.079, 0.069, 0.091, 0.124, 0.202, 0.198, 0.232, 0.213, 0.236, 0.235, 0.204, 0.099, 0.133, 0.141, 0.108, 0.172, 0.121, 0.117, 0.101, 0.097, 0.113, 0.077, 0.096, 0.096, 0.094, 0.076, 0.084, 0.068, 0.082, 0.08, 0.044, 0.065, 0.063, 0.087, 0.078, 0.068, 0.066, 0.034, 0.039, 0.056, 0.076, 0.11, 0.067, 0.094, 0.123, 0.143, 0.096, 0.102, 0.098, 0.071, 0.065, 0.107, 0.166, 0.098, 0.111, 0.141, 0.134, 0.148, 0.135, 0.114, 0.09, 0.144, 0.106, 0.178, 0.171, 0.176, 0.221, 0.198, 0.238, 0.221, 0.203, 0.183, 0.178, 0.156, 0.155, 0.165, 0.175, 0.165, 0.146, 0.159, 0.145, 0.122, 0.184, 0.154, 0.131, 0.109, 0.11, 0.091, 0.118, 0.081, 0.102, 0.098, 0.091, 0.076, 0.079, 0.061, 0.047, 0.055, 0.058, 0.14, 0.084, 0.061, 0.281, 0.248, 0.297, 0.255, 0.337, 0.314, 0.4, 0.352, 0.315, 0.272, 0.286, 0.249, 0.257, 0.295, 0.29, 0.292, 0.226, 0.251, 0.259, 0.265, 0.215, 0.18, 0.134, 0.112, 0.12, 0.106, 0.076, 0.055, 0.053, 0.048, 0.044, 0.042, 0.056, 0.046, 0.056, 0.076, 0.039, 0.044, 0.035, 0.044, 0.054, 0.038, 0.038, 0.045, 0.05, 0.046, 0.045, 0.103, 0.198, 0.163, 0.154, 0.189, 0.128, 0.161, 0.121, 0.131, 0.185, 0.113, 0.11, 0.137, 0.131, 0.127, 0.147, 0.113, 0.115, 0.108, 0.064, 0.081, 0.075, 0.07, 0.064, 0.071, 0.059, 0.065, 0.052, 0.05, 0.047, 0.091, 0.069, 0.052, 0.053, 0.044, 0.058, 0.066, 0.052, 0.045, 0.051, 0.048, 0.048, 0.067, 0.057, 0.082, 0.066, 0.047, 0.068, 0.061, 0.067, 0.069, 0.068, 0.074, 0.105, 0.118, 0.104, 0.122, 0.16, 0.111, 0.11, 0.124, 0.154, 0.188, 0.201, 0.245, 0.248, 0.254, 0.266, 0.204, 0.203, 0.143, 0.12, 0.078, 0.055, 0.059, 0.055, 0.068, 0.041, 0.057, 0.05, 0.043, 0.264, 0.154, 0.098, 0.166, 0.094, 0.088, 0.085, 0.063, 0.072, 0.091, 0.09, 0.061, 0.07, 0.06, 0.066, 0.068, 0.065, 0.059, 0.089, 0.122, 0.149, 0.145, 0.142, 0.181, 0.204, 0.18, 0.2, 0.214, 0.211, 0.219, 0.149, 0.13, 0.121, 0.134, 0.14, 0.127, 0.147, 0.154, 0.166, 0.135, 0.155, 0.123, 0.13, 0.14, 0.137, 0.139, 0.09, 0.138, 0.165, 0.126, 0.142, 0.098, 0.061, 0.101, 0.096, 0.079, 0.088, 0.101, 0.09, 0.102, 0.084, 0.104, 0.092, 0.108, 0.102, 0.116, 0.137, 0.105, 0.123, 0.106, 0.172, 0.114, 0.112, 0.145, 0.124, 0.136, 0.104, 0.129, 0.158, 0.107, 0.103, 0.148, 0.127, 0.118, 0.09, 0.107, 0.066, 0.11, 0.086, 0.103, 0.1, 0.078, 0.075, 0.068, 0.061, 0.052, 0.049, 0.064, 0.076, 0.052, 0.047, 0.074, 0.056, 0.038, 0.043, 0.061, 0.041, 0.052, 0.049, 0.046, 0.042, 0.043, 0.057, 0.054, 0.052, 0.059, 0.058, 0.07, 0.052, 0.064, 0.064, 0.066, 0.07, 0.042, 0.065, 0.051, 0.053, 0.082]</script>
 <div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
-<div class="refrow"><span class="chip match" title="ping4 — correct"><span class="han">蘋</span> ping4</span><span class="chip match" title="gwo2 — correct"><span class="han">果</span> gwo2</span><span class="chip match" title="tung4 — correct"><span class="han">同</span> tung4</span><span class="chip sub" title="caang2 — wrong"><span class="han">橙</span> caang2</span><span class="chip match" title="dou1 — correct"><span class="han">都</span> dou1</span><span class="chip match" title="fong3 — correct"><span class="han">放</span> fong3</span><span class="chip match" title="hai2 — correct"><span class="han">喺</span> hai2</span><span class="chip match" title="toi4 — correct"><span class="han">枱</span> toi4</span><span class="chip sub" title="min6 — wrong"><span class="han">面</span> min6</span></div>
+<div class="drefrow"><span class="dchip match" title="ping4 — correct"><span class="han">蘋</span> ping4</span><span class="dchip match" title="gwo2 — correct"><span class="han">果</span> gwo2</span><span class="dchip match" title="tung4 — correct"><span class="han">同</span> tung4</span><span class="dchip sub" title="caang2 — wrong"><span class="han">橙</span> caang2</span><span class="dchip match" title="dou1 — correct"><span class="han">都</span> dou1</span><span class="dchip match" title="fong3 — correct"><span class="han">放</span> fong3</span><span class="dchip match" title="hai2 — correct"><span class="han">喺</span> hai2</span><span class="dchip match" title="toi4 — correct"><span class="han">枱</span> toi4</span><span class="dchip sub" title="min6 — wrong"><span class="han">面</span> min6</span></div>
 <div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box or the waveform to hear it):</div>
-<div class="tier"><div class="box match" data-start="0.84" data-end="1.09" style="left:22.99%;width:6.84%;border-top-color:#984ea3" title="ping4 conf 100% — click to play">ping4<small>100%</small></div><div class="box match" data-start="1.09" data-end="1.41" style="left:29.83%;width:8.76%;border-top-color:#377eb8" title="gwo2 conf 100% — click to play">gwo2<small>100%</small></div><div class="box match" data-start="1.41" data-end="1.73" style="left:38.59%;width:8.76%;border-top-color:#984ea3" title="tung4 conf 100% — click to play">tung4<small>100%</small></div><div class="box sub" data-start="1.73" data-end="2.09" style="left:47.35%;width:9.85%;border-top-color:#984ea3" title="caan4 conf 96% alt: caang4(0.02) — click to play">caan4<small>96%</small></div><div class="box match" data-start="2.09" data-end="2.29" style="left:57.20%;width:5.47%;border-top-color:#e41a1c" title="dou1 conf 100% — click to play">dou1<small>100%</small></div><div class="box match" data-start="2.29" data-end="2.65" style="left:62.67%;width:9.85%;border-top-color:#4daf4a" title="fong3 conf 100% — click to play">fong3<small>100%</small></div><div class="box match" data-start="2.65" data-end="2.89" style="left:72.52%;width:6.57%;border-top-color:#377eb8" title="hai2 conf 100% — click to play">hai2<small>100%</small></div><div class="box match" data-start="2.89" data-end="3.21" style="left:79.09%;width:8.76%;border-top-color:#984ea3" title="toi4 conf 97% alt: toi3(0.02) — click to play">toi4<small>97%</small></div><div class="box sub" data-start="3.21" data-end="3.65" style="left:87.85%;width:12.04%;border-top-color:#555555" title="in6 conf 23% alt: i6(0.22), i3(0.05) — click to play">in6<small>23%</small></div></div>
+<div class="dtier"><div class="dbox match" data-start="0.84" data-end="1.09" style="left:22.99%;width:6.84%;border-top-color:#984ea3" title="ping4 conf 100% — click to play">ping4<small>100%</small></div><div class="dbox match" data-start="1.09" data-end="1.41" style="left:29.83%;width:8.76%;border-top-color:#377eb8" title="gwo2 conf 100% — click to play">gwo2<small>100%</small></div><div class="dbox match" data-start="1.41" data-end="1.73" style="left:38.59%;width:8.76%;border-top-color:#984ea3" title="tung4 conf 100% — click to play">tung4<small>100%</small></div><div class="dbox sub" data-start="1.73" data-end="2.09" style="left:47.35%;width:9.85%;border-top-color:#984ea3" title="caan4 conf 96% alt: caang4(0.02) — click to play">caan4<small>96%</small></div><div class="dbox match" data-start="2.09" data-end="2.29" style="left:57.20%;width:5.47%;border-top-color:#e41a1c" title="dou1 conf 100% — click to play">dou1<small>100%</small></div><div class="dbox match" data-start="2.29" data-end="2.65" style="left:62.67%;width:9.85%;border-top-color:#4daf4a" title="fong3 conf 100% — click to play">fong3<small>100%</small></div><div class="dbox match" data-start="2.65" data-end="2.89" style="left:72.52%;width:6.57%;border-top-color:#377eb8" title="hai2 conf 100% — click to play">hai2<small>100%</small></div><div class="dbox match" data-start="2.89" data-end="3.21" style="left:79.09%;width:8.76%;border-top-color:#984ea3" title="toi4 conf 97% alt: toi3(0.02) — click to play">toi4<small>97%</small></div><div class="dbox sub" data-start="3.21" data-end="3.65" style="left:87.85%;width:12.04%;border-top-color:#555555" title="in6 conf 23% alt: i6(0.22), i3(0.05) — click to play">in6<small>23%</small></div></div>
 </section>
+  </section>
+    <div class="eyebrow"><b>§8</b> Takeaways</div>
+    <h2>What this run says</h2>
+    <ol class="takeaways" id="take"></ol>
+  </section>
+
+  <footer>
+    <div>Generated from repository data by <code>scripts/build_benchmark_html.py</code>. The source write-up is <code>BENCHMARK.md</code>.</div>
+    <div>Pipeline: <code>compute_audio_quality_dnsmos_sigmos.py</code> → <code>transcribe_yue_phone.py</code> → <code>compute_confusions.py</code>.</div>
+  </footer>
+</main>
+<div class="tip" id="tip" hidden></div>
+
 <script>
-function drawWave(canvas, peaks, t, dur) {
-  const dpr = window.devicePixelRatio || 1;
-  const w = canvas.clientWidth, h = canvas.clientHeight;
-  if (!w) return;
-  canvas.width = w * dpr; canvas.height = h * dpr;
-  const g = canvas.getContext('2d');
-  g.scale(dpr, dpr);
-  g.clearRect(0, 0, w, h);
-  const mid = h / 2, n = peaks.length;
-  g.fillStyle = '#90a4ae';
-  for (let i = 0; i < n; i++) {
-    const x = (i / n) * w, bh = Math.max(1, peaks[i] * (h - 6));
-    g.fillRect(x, mid - bh / 2, Math.max(1, w / n - 0.3), bh);
-  }
-  if (t !== null && dur > 0) {
-    g.fillStyle = '#1a73e8';
-    g.fillRect((t / dur) * w - 1, 0, 2, h);
-  }
+const DATA = {"metrics":["dnsmos_sig","dnsmos_bak","dnsmos_ovrl","sigmos_col","sigmos_disc","sigmos_loud","sigmos_noise","sigmos_reverb","sigmos_sig","sigmos_ovrl"],"clips":[{"id":"spk_s01__env_iphone_far__prompt_mtr_01__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_01","dur":4.826,"zh":"媽媽喺廚房煮飯，好香呀","ops":[["=","maa4","maa4"],["=","maa1","maa1"],["=","hai2","hai2"],["=","cyu4","cyu4"],["=","fong2","fong2"],["=","zyu2","zyu2"],["=","faan6","faan6"],["=","hou2","hou2"],["=","hoeng1","hoeng1"],["=","aa3","aa3"]],"ser":0.0,"exact":true,"mos":[3.013,2.131,1.849,2.78,2.681,3.134,1.925,3.864,2.61,2.069],"rtf":0.005},{"id":"spk_s01__env_iphone_far__prompt_mtr_02__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_02","dur":4.686,"zh":"呢本書入面有好多靈感故事","ops":[["=","ne1","ne1"],["=","bun2","bun2"],["=","syu1","syu1"],["=","jap6","jap6"],["=","min6","min6"],["=","jau5","jau5"],["=","hou2","hou2"],["=","do1","do1"],["=","ling4","ling4"],["=","gam2","gam2"],["=","gu3","gu3"],["=","si6","si6"]],"ser":0.0,"exact":true,"mos":[3.175,2.082,1.859,2.548,3.062,3.299,1.569,4.176,2.645,2.071],"rtf":0.038},{"id":"spk_s01__env_iphone_far__prompt_mtr_03__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_03","dur":4.466,"zh":"姐姐幫我剪咗一張生日卡","ops":[["s","ze6","ze4"],["=","ze1","ze1"],["=","bong1","bong1"],["=","ngo5","ngo5"],["=","zin2","zin2"],["=","zo2","zo2"],["=","jat1","jat1"],["=","zoeng1","zoeng1"],["=","saan1","saan1"],["s","jat6","jik6"],["s","kaat1","cat1"]],"ser":0.2727,"exact":false,"mos":[3.217,2.027,2.009,2.284,3.02,2.674,1.444,4.49,2.745,2.011],"rtf":0.039},{"id":"spk_s01__env_iphone_far__prompt_mtr_04__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_04","dur":4.146,"zh":"天氣凍，記住著多件衣服","ops":[["=","tin1","tin1"],["=","hei3","hei3"],["=","dung6","dung6"],["=","gei3","gei3"],["s","zyu6","dak1"],["=","zoek3","zoek3"],["=","do1","do1"],["s","gin3","giu6"],["=","ji1","ji1"],["=","fuk6","fuk6"]],"ser":0.2,"exact":false,"mos":[3.229,2.06,2.055,2.057,2.861,2.632,2.162,3.363,2.643,2.108],"rtf":0.041},{"id":"spk_s01__env_iphone_far__prompt_mtr_05__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_05","dur":3.666,"zh":"蘋果同橙都放喺枱面","ops":[["=","ping4","ping4"],["=","gwo2","gwo2"],["=","tung4","tung4"],["s","caang2","caan4"],["=","dou1","dou1"],["=","fong3","fong3"],["=","hai2","hai2"],["d","toi4",""],["s","min6","toi4in6"]],"ser":0.3333,"exact":false,"mos":[2.986,1.962,1.788,2.29,3.388,3.158,1.765,4.235,3.089,1.84],"rtf":0.049},{"id":"spk_s01__env_iphone_far__prompt_mtr_06__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_06","dur":4.086,"zh":"佢今日著咗一件藍色嘅衫","ops":[["=","keoi5","keoi5"],["=","gam1","gam1"],["=","jat6","jat6"],["=","zoek3","zoek3"],["=","zo2","zo2"],["=","jat1","jat1"],["=","gin6","gin6"],["=","laam4","laam4"],["=","sik1","sik1"],["=","ge3","ge3"],["s","saam1","soeng1"]],"ser":0.0909,"exact":false,"mos":[3.19,2.088,2.009,2.629,3.12,3.282,2.087,3.75,2.773,1.944],"rtf":0.044},{"id":"spk_s01__env_iphone_far__prompt_mtr_07__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_07","dur":3.126,"zh":"我哋要去公園玩滑梯","ops":[["=","ngo5","ngo5"],["=","dei6","dei6"],["=","jiu3","jiu3"],["=","heoi3","heoi3"],["=","gung1","gung1"],["=","jyun5","jyun5"],["s","waan2","waa6"],["s","waat6","waak6"],["s","tai1","teoi1"]],"ser":0.3333,"exact":false,"mos":[2.335,1.559,1.482,2.108,3.517,3.488,2.283,3.616,2.863,2.135],"rtf":0.055},{"id":"spk_s01__env_iphone_far__prompt_mtr_08__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_08","dur":4.086,"zh":"巴士好快就到達車站","ops":[["=","baa1","baa1"],["s","si2","si5"],["=","hou2","hou2"],["=","faai3","faai3"],["=","zau6","zau6"],["=","dou3","dou3"],["=","daat6","daat6"],["=","ce1","ce1"],["=","zaam6","zaam6"]],"ser":0.1111,"exact":false,"mos":[3.24,2.292,2.118,2.7,3.856,2.955,2.084,4.18,3.229,2.314],"rtf":0.046},{"id":"spk_s01__env_iphone_far__prompt_mtr_09__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_09","dur":4.746,"zh":"老師今日教我哋讀新嘅詞語","ops":[["=","lou5","lou5"],["=","si1","si1"],["=","gam1","gam1"],["=","jat6","jat6"],["=","gaau3","gaau3"],["=","ngo5","ngo5"],["=","dei6","dei6"],["=","duk6","duk6"],["=","san1","san1"],["=","ge3","ge3"],["=","ci4","ci4"],["=","jyu5","jyu5"]],"ser":0.0,"exact":true,"mos":[3.131,2.092,1.959,2.238,2.842,2.961,2.223,3.623,2.621,2.224],"rtf":0.038},{"id":"spk_s01__env_iphone_far__prompt_mtr_10__take_01","group":"iphone_far","env":"iphone_far","speaker":"spk_s01","device":"iphone","mic":"far","room":"unknown","prompt":"mtr_10","dur":4.526,"zh":"小狗喺草地上跑嚟跑去","ops":[["=","siu2","siu2"],["=","gau2","gau2"],["=","hai2","hai2"],["=","cou2","cou2"],["=","dei6","dei6"],["=","soeng6","soeng6"],["i","","min6"],["=","paau2","paau2"],["=","lai4","lai4"],["=","paau2","paau2"],["=","heoi3","heoi3"]],"ser":0.1,"exact":false,"mos":[3.344,2.371,2.236,2.621,3.05,3.209,1.67,3.914,2.488,2.05],"rtf":0.037},{"id":"spk_s01__env_studio_reference__prompt_mtr_01__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_01","dur":4.86,"zh":"媽媽喺廚房煮飯，好香呀","ops":[["=","maa4","maa4"],["=","maa1","maa1"],["=","hai2","hai2"],["=","cyu4","cyu4"],["=","fong2","fong2"],["=","zyu2","zyu2"],["=","faan6","faan6"],["=","hou2","hou2"],["=","hoeng1","hoeng1"],["=","aa3","aa3"]],"ser":0.0,"exact":true,"mos":[3.404,2.979,2.643,3.062,4.169,3.843,3.085,4.183,3.407,2.95],"rtf":0.039},{"id":"spk_s01__env_studio_reference__prompt_mtr_02__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_02","dur":5.46,"zh":"呢本書入面有好多靈感故事","ops":[["=","ne1","ne1"],["=","bun2","bun2"],["=","syu1","syu1"],["=","jap6","jap6"],["=","min6","min6"],["=","jau5","jau5"],["=","hou2","hou2"],["=","do1","do1"],["=","ling4","ling4"],["=","gam2","gam2"],["=","gu3","gu3"],["=","si6","si6"]],"ser":0.0,"exact":true,"mos":[3.479,3.584,2.975,2.795,3.391,3.53,2.461,3.805,3.184,2.472],"rtf":0.036},{"id":"spk_s01__env_studio_reference__prompt_mtr_03__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_03","dur":5.02,"zh":"姐姐幫我剪咗一張生日卡","ops":[["s","ze6","ze4"],["=","ze1","ze1"],["=","bong1","bong1"],["=","ngo5","ngo5"],["=","zin2","zin2"],["=","zo2","zo2"],["=","jat1","jat1"],["=","zoeng1","zoeng1"],["=","saan1","saan1"],["=","jat6","jat6"],["s","kaat1","kaak1"]],"ser":0.1818,"exact":false,"mos":[3.518,3.065,2.77,3.159,4.12,3.532,3.231,4.493,3.377,2.976],"rtf":0.033},{"id":"spk_s01__env_studio_reference__prompt_mtr_04__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_04","dur":5.96,"zh":"天氣凍，記住著多件衣服","ops":[["=","tin1","tin1"],["=","hei3","hei3"],["=","dung6","dung6"],["=","gei3","gei3"],["s","zyu6","dak1"],["=","zoek3","zoek3"],["=","do1","do1"],["s","gin3","gin6"],["=","ji1","ji1"],["=","fuk6","fuk6"]],"ser":0.2,"exact":false,"mos":[3.013,3.363,2.465,2.484,3.868,3.427,2.98,3.714,3.111,2.753],"rtf":0.029},{"id":"spk_s01__env_studio_reference__prompt_mtr_05__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_05","dur":5.02,"zh":"蘋果同橙都放喺枱面","ops":[["=","ping4","ping4"],["=","gwo2","gwo2"],["=","tung4","tung4"],["s","caang2","caan2"],["=","dou1","dou1"],["=","fong3","fong3"],["=","hai2","hai2"],["=","toi4","toi4"],["=","min6","min6"]],"ser":0.1111,"exact":false,"mos":[3.61,3.409,2.993,3.024,3.344,3.2,2.817,3.705,3.182,2.815],"rtf":0.034},{"id":"spk_s01__env_studio_reference__prompt_mtr_06__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_06","dur":5.36,"zh":"佢今日著咗一件藍色嘅衫","ops":[["=","keoi5","keoi5"],["=","gam1","gam1"],["=","jat6","jat6"],["=","zoek3","zoek3"],["=","zo2","zo2"],["=","jat1","jat1"],["=","gin6","gin6"],["=","laam4","laam4"],["=","sik1","sik1"],["=","ge3","ge3"],["=","saam1","saam1"]],"ser":0.0,"exact":true,"mos":[3.252,3.286,2.593,2.416,3.914,4.246,2.929,4.012,3.091,2.368],"rtf":0.036},{"id":"spk_s01__env_studio_reference__prompt_mtr_07__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_07","dur":5.02,"zh":"我哋要去公園玩滑梯","ops":[["=","ngo5","ngo5"],["=","dei6","dei6"],["=","jiu3","jiu3"],["=","heoi3","heoi3"],["=","gung1","gung1"],["s","jyun5","jyu5"],["s","waan2","waa2"],["s","waat6","waak6"],["=","tai1","tai1"]],"ser":0.3333,"exact":false,"mos":[3.364,3.262,2.717,2.535,3.738,3.588,2.94,3.325,3.216,2.653],"rtf":0.036},{"id":"spk_s01__env_studio_reference__prompt_mtr_08__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_08","dur":5.02,"zh":"巴士好快就到達車站","ops":[["=","baa1","baa1"],["=","si2","si2"],["=","hou2","hou2"],["=","faai3","faai3"],["=","zau6","zau6"],["=","dou3","dou3"],["=","daat6","daat6"],["=","ce1","ce1"],["=","zaam6","zaam6"]],"ser":0.0,"exact":true,"mos":[3.462,3.347,2.83,3.141,4.18,3.989,2.566,4.267,3.706,2.817],"rtf":0.005},{"id":"spk_s01__env_studio_reference__prompt_mtr_09__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_09","dur":5.46,"zh":"老師今日教我哋讀新嘅詞語","ops":[["=","lou5","lou5"],["=","si1","si1"],["=","gam1","gam1"],["=","jat6","jat6"],["=","gaau3","gaau3"],["=","ngo5","ngo5"],["=","dei6","dei6"],["=","duk6","duk6"],["=","san1","san1"],["=","ge3","ge3"],["=","ci4","ci4"],["=","jyu5","jyu5"]],"ser":0.0,"exact":true,"mos":[3.251,3.125,2.543,2.976,3.134,3.901,2.335,4.128,2.833,2.332],"rtf":0.031},{"id":"spk_s01__env_studio_reference__prompt_mtr_10__take_01","group":"studio_reference","env":"studio_reference","speaker":"spk_s01","device":"elgato_wave3","mic":"close","room":"studio","prompt":"mtr_10","dur":5.62,"zh":"小狗喺草地上跑嚟跑去","ops":[["=","siu2","siu2"],["=","gau2","gau2"],["=","hai2","hai2"],["=","cou2","cou2"],["=","dei6","dei6"],["=","soeng6","soeng6"],["i","","min6"],["=","paau2","paau2"],["=","lai4","lai4"],["=","paau2","paau2"],["=","heoi3","heoi3"]],"ser":0.1,"exact":false,"mos":[3.399,2.838,2.52,2.585,3.254,3.322,2.158,4.21,2.929,2.34],"rtf":0.031},{"id":"spk_s02__env_android__prompt_mtr_01__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_01","dur":5.546,"zh":"媽媽喺廚房煮飯，好香呀","ops":[["=","maa4","maa4"],["=","maa1","maa1"],["=","hai2","hai2"],["=","cyu4","cyu4"],["=","fong2","fong2"],["=","zyu2","zyu2"],["i","","zo2"],["=","faan6","faan6"],["=","hou2","hou2"],["=","hoeng1","hoeng1"],["=","aa3","aa3"]],"ser":0.1,"exact":false,"mos":[3.221,2.521,2.345,3.319,3.607,3.364,3.145,4.641,2.671,2.077],"rtf":0.007},{"id":"spk_s02__env_android__prompt_mtr_02__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_02","dur":6.266,"zh":"呢本書入面有好多靈感故事","ops":[["=","ne1","ne1"],["=","bun2","bun2"],["=","syu1","syu1"],["=","jap6","jap6"],["s","min6","bin6"],["=","jau5","jau5"],["=","hou2","hou2"],["=","do1","do1"],["=","ling4","ling4"],["=","gam2","gam2"],["s","gu3","gu2"],["=","si6","si6"]],"ser":0.1667,"exact":false,"mos":[2.766,2.196,1.873,3.183,3.985,3.288,3.336,3.839,3.22,2.732],"rtf":0.031},{"id":"spk_s02__env_android__prompt_mtr_03__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_03","dur":5.866,"zh":"姐姐幫我剪咗一張生日卡","ops":[["s","ze6","ze4"],["=","ze1","ze1"],["=","bong1","bong1"],["=","ngo5","ngo5"],["=","zin2","zin2"],["=","zo2","zo2"],["=","jat1","jat1"],["=","zoeng1","zoeng1"],["=","saan1","saan1"],["s","jat6","jan4"],["s","kaat1","kaak1"]],"ser":0.2727,"exact":false,"mos":[3.122,2.528,2.24,2.595,3.647,3.373,2.41,3.455,2.704,2.238],"rtf":0.03},{"id":"spk_s02__env_android__prompt_mtr_04__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_04","dur":5.686,"zh":"天氣凍，記住著多件衣服","ops":[["d","tin1",""],["s","hei3","ping4"],["s","dung6","gwo2"],["s","gei3","tung4"],["s","zyu6","caan2"],["s","zoek3","dou1"],["s","do1","fong3"],["s","gin3","hai2"],["s","ji1","toi4"],["s","fuk6","min6"]],"ser":1.0,"exact":false,"mos":[3.287,2.623,2.376,3.29,3.539,3.554,3.081,3.746,3.113,2.582],"rtf":0.03},{"id":"spk_s02__env_android__prompt_mtr_05__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_05","dur":6.206,"zh":"蘋果同橙都放喺枱面","ops":[["i","","keoi5"],["i","","gam1"],["s","ping4","jat6"],["s","gwo2","zoek3"],["s","tung4","zo2"],["s","caang2","jat1"],["s","dou1","gin6"],["s","fong3","laam4"],["s","hai2","sik1"],["s","toi4","ge3"],["s","min6","saang1"]],"ser":1.2222,"exact":false,"mos":[3.184,2.122,2.05,2.946,3.55,3.038,2.839,4.023,2.462,2.07],"rtf":0.028},{"id":"spk_s02__env_android__prompt_mtr_06__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_06","dur":4.946,"zh":"佢今日著咗一件藍色嘅衫","ops":[["d","keoi5",""],["d","gam1",""],["s","jat6","ngo5"],["s","zoek3","dei6"],["s","zo2","jiu3"],["s","jat1","heoi3"],["s","gin6","gung1"],["s","laam4","jyun5"],["s","sik1","waam2"],["s","ge3","waak6"],["s","saam1","tai3"]],"ser":1.0,"exact":false,"mos":[3.332,2.704,2.452,3.1,3.591,2.805,3.135,3.424,2.483,2.215],"rtf":0.034},{"id":"spk_s02__env_android__prompt_mtr_07__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_07","dur":5.246,"zh":"我哋要去公園玩滑梯","ops":[["s","ngo5","baa1"],["s","dei6","si2"],["s","jiu3","hou2"],["s","heoi3","faai3"],["s","gung1","zau6"],["s","jyun5","dou3"],["s","waan2","daat6"],["s","waat6","ce1"],["s","tai1","zaam2"]],"ser":1.0,"exact":false,"mos":[3.087,2.024,1.859,2.808,3.349,3.217,2.493,3.718,2.392,2.073],"rtf":0.034},{"id":"spk_s02__env_android__prompt_mtr_08__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_08","dur":5.886,"zh":"巴士好快就到達車站","ops":[["i","","tin1"],["s","baa1","hei3"],["s","si2","dung6"],["s","hou2","gei3"],["s","faai3","dak1"],["s","zau6","zoek3"],["s","dou3","do1"],["s","daat6","gin3"],["s","ce1","ji1"],["s","zaam6","fuk6"]],"ser":1.1111,"exact":false,"mos":[2.928,2.599,2.114,2.62,2.959,2.808,2.567,3.604,2.495,2.108],"rtf":0.03},{"id":"spk_s02__env_android__prompt_mtr_09__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_09","dur":5.966,"zh":"老師今日教我哋讀新嘅詞語","ops":[["=","lou5","lou5"],["=","si1","si1"],["=","gam1","gam1"],["=","jat6","jat6"],["=","gaau3","gaau3"],["=","ngo5","ngo5"],["=","dei6","dei6"],["=","duk6","duk6"],["=","san1","san1"],["=","ge3","ge3"],["=","ci4","ci4"],["=","jyu5","jyu5"]],"ser":0.0,"exact":true,"mos":[3.142,3.137,2.53,2.837,3.691,3.621,3.884,3.693,3.091,2.598],"rtf":0.029},{"id":"spk_s02__env_android__prompt_mtr_10__take_01","group":"unknown_android","env":"unknown","speaker":"spk_s02","device":"android","mic":"unknown","room":"unknown","prompt":"mtr_10","dur":5.206,"zh":"小狗喺草地上跑嚟跑去","ops":[["=","siu2","siu2"],["=","gau2","gau2"],["s","hai2","hai6"],["=","cou2","cou2"],["=","dei6","dei6"],["s","soeng6","soeng5"],["=","paau2","paau2"],["=","lai4","lai4"],["=","paau2","paau2"],["=","heoi3","heoi3"]],"ser":0.2,"exact":false,"mos":[3.335,2.248,2.268,2.852,3.693,3.072,3.399,3.797,2.87,2.611],"rtf":0.032},{"id":"spk_s02__env_unknown__prompt_mtr_01__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_01","dur":6.706,"zh":"媽媽喺廚房煮飯，好香呀","ops":[["=","maa4","maa4"],["=","maa1","maa1"],["=","hai2","hai2"],["=","cyu4","cyu4"],["=","fong2","fong2"],["=","zyu2","zyu2"],["=","faan6","faan6"],["=","hou2","hou2"],["=","hoeng1","hoeng1"],["=","aa3","aa3"]],"ser":0.0,"exact":true,"mos":[2.787,1.708,1.707,2.408,3.458,2.177,2.138,3.21,2.669,2.242],"rtf":0.025},{"id":"spk_s02__env_unknown__prompt_mtr_02__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_02","dur":5.826,"zh":"呢本書入面有好多靈感故事","ops":[["=","ne1","ne1"],["=","bun2","bun2"],["=","syu1","syu1"],["=","jap6","jap6"],["=","min6","min6"],["=","jau5","jau5"],["=","hou2","hou2"],["=","do1","do1"],["=","ling4","ling4"],["=","gam2","gam2"],["=","gu3","gu3"],["=","si6","si6"]],"ser":0.0,"exact":true,"mos":[2.629,1.922,1.6,3.063,3.457,2.632,2.045,3.679,2.439,2.106],"rtf":0.029},{"id":"spk_s02__env_unknown__prompt_mtr_03__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_03","dur":5.366,"zh":"姐姐幫我剪咗一張生日卡","ops":[["s","ze6","ze4"],["=","ze1","ze1"],["s","bong1","fon1"],["=","ngo5","ngo5"],["=","zin2","zin2"],["=","zo2","zo2"],["=","jat1","jat1"],["=","zoeng1","zoeng1"],["s","saan1","saang1"],["=","jat6","jat6"],["s","kaat1","kaak1"]],"ser":0.3636,"exact":false,"mos":[3.34,2.407,2.372,2.593,3.493,3.206,2.252,3.448,2.98,1.894],"rtf":0.031},{"id":"spk_s02__env_unknown__prompt_mtr_04__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_04","dur":5.786,"zh":"天氣凍，記住著多件衣服","ops":[["=","tin1","tin1"],["=","hei3","hei3"],["=","dung6","dung6"],["=","gei3","gei3"],["s","zyu6","dak1"],["=","zoek3","zoek3"],["=","do1","do1"],["s","gin3","gin6"],["=","ji1","ji1"],["=","fuk6","fuk6"]],"ser":0.2,"exact":false,"mos":[3.254,2.699,2.392,2.856,3.753,2.645,1.935,3.953,3.036,2.084],"rtf":0.029},{"id":"spk_s02__env_unknown__prompt_mtr_05__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_05","dur":5.566,"zh":"蘋果同橙都放喺枱面","ops":[["=","ping4","ping4"],["=","gwo2","gwo2"],["=","tung4","tung4"],["s","caang2","caan2"],["=","dou1","dou1"],["=","fong3","fong3"],["=","hai2","hai2"],["=","toi4","toi4"],["=","min6","min6"]],"ser":0.1111,"exact":false,"mos":[3.437,1.834,2.044,3.528,3.316,2.852,1.642,3.42,3.158,1.888],"rtf":0.031},{"id":"spk_s02__env_unknown__prompt_mtr_06__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_06","dur":5.226,"zh":"佢今日著咗一件藍色嘅衫","ops":[["=","keoi5","keoi5"],["=","gam1","gam1"],["=","jat6","jat6"],["=","zoek3","zoek3"],["=","zo2","zo2"],["=","jat1","jat1"],["=","gin6","gin6"],["=","laam4","laam4"],["s","sik1","sik6"],["=","ge3","ge3"],["=","saam1","saam1"]],"ser":0.0909,"exact":false,"mos":[2.925,2.065,1.924,3.157,3.672,2.554,2.135,3.562,3.736,2.337],"rtf":0.033},{"id":"spk_s02__env_unknown__prompt_mtr_07__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_07","dur":5.386,"zh":"我哋要去公園玩滑梯","ops":[["=","ngo5","ngo5"],["=","dei6","dei6"],["=","jiu3","jiu3"],["=","heoi3","heoi3"],["=","gung1","gung1"],["=","jyun5","jyun5"],["s","waan2","waa6"],["s","waat6","waak6"],["=","tai1","tai1"]],"ser":0.2222,"exact":false,"mos":[3.351,2.231,2.296,2.111,3.569,2.974,2.072,3.829,2.64,1.586],"rtf":0.031},{"id":"spk_s02__env_unknown__prompt_mtr_08__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_08","dur":6.006,"zh":"巴士好快就到達車站","ops":[["=","baa1","baa1"],["=","si2","si2"],["=","hou2","hou2"],["=","faai3","faai3"],["=","zau6","zau6"],["=","dou3","dou3"],["s","daat6","daak6"],["=","ce1","ce1"],["=","zaam6","zaam6"]],"ser":0.1111,"exact":false,"mos":[3.598,2.922,2.755,2.879,2.974,2.958,2.469,3.361,3.264,2.304],"rtf":0.03},{"id":"spk_s02__env_unknown__prompt_mtr_09__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_09","dur":6.846,"zh":"老師今日教我哋讀新嘅詞語","ops":[["=","lou5","lou5"],["=","si1","si1"],["=","gam1","gam1"],["=","jat6","jat6"],["=","gaau3","gaau3"],["=","ngo5","ngo5"],["=","dei6","dei6"],["=","duk6","duk6"],["=","san1","san1"],["=","ge3","ge3"],["=","ci4","ci4"],["=","jyu5","jyu5"]],"ser":0.0,"exact":true,"mos":[2.833,1.953,1.807,2.722,2.865,2.447,1.805,3.425,2.917,1.896],"rtf":0.026},{"id":"spk_s02__env_unknown__prompt_mtr_10__take_01","group":"unknown_mtr","env":"unknown","speaker":"spk_s02","device":"unknown","mic":"normal","room":"public_transport","prompt":"mtr_10","dur":7.166,"zh":"小狗喺草地上跑嚟跑去","ops":[["=","siu2","siu2"],["=","gau2","gau2"],["=","hai2","hai2"],["=","cou2","cou2"],["=","dei6","dei6"],["=","soeng6","soeng6"],["i","","min6"],["=","paau2","paau2"],["s","lai4","lei4"],["=","paau2","paau2"],["=","heoi3","heoi3"]],"ser":0.2,"exact":false,"mos":[3.025,1.69,1.737,2.612,2.608,2.364,2.26,3.02,2.206,2.088],"rtf":0.023},{"id":"spk_s03__env_iphone_close__prompt_mtr_01__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_01","dur":5.406,"zh":"媽媽喺廚房煮飯，好香呀","ops":[["=","maa4","maa4"],["=","maa1","maa1"],["=","hai2","hai2"],["=","cyu4","cyu4"],["=","fong2","fong2"],["=","zyu2","zyu2"],["=","faan6","faan6"],["=","hou2","hou2"],["=","hoeng1","hoeng1"],["=","aa3","aa3"]],"ser":0.0,"exact":true,"mos":[3.585,2.749,2.683,2.067,4.281,2.221,2.276,4.216,2.393,1.844],"rtf":0.034},{"id":"spk_s03__env_iphone_close__prompt_mtr_02__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_02","dur":7.746,"zh":"呢本書入面有好多靈感故事","ops":[["s","ne1","zi1"],["=","bun2","bun2"],["=","syu1","syu1"],["=","jap6","jap6"],["s","min6","bin6"],["=","jau5","jau5"],["=","hou2","hou2"],["=","do1","do1"],["=","ling4","ling4"],["=","gam2","gam2"],["=","gu3","gu3"],["=","si6","si6"]],"ser":0.1667,"exact":false,"mos":[3.391,3.431,2.852,3.349,3.496,2.727,2.935,4.342,2.875,2.283],"rtf":0.022},{"id":"spk_s03__env_iphone_close__prompt_mtr_03__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_03","dur":5.926,"zh":"姐姐幫我剪咗一張生日卡","ops":[["s","ze6","ze4"],["=","ze1","ze1"],["=","bong1","bong1"],["=","ngo5","ngo5"],["=","zin2","zin2"],["=","zo2","zo2"],["=","jat1","jat1"],["=","zoeng1","zoeng1"],["=","saan1","saan1"],["=","jat6","jat6"],["s","kaat1","kaa1"]],"ser":0.1818,"exact":false,"mos":[3.307,3.68,2.897,1.911,3.872,2.58,2.558,4.085,2.817,2.391],"rtf":0.029},{"id":"spk_s03__env_iphone_close__prompt_mtr_04__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_04","dur":6.146,"zh":"天氣凍，記住著多件衣服","ops":[["=","tin1","tin1"],["=","hei3","hei3"],["s","dung6","dong6"],["=","gei3","gei3"],["=","zyu6","zyu6"],["=","zoek3","zoek3"],["=","do1","do1"],["s","gin3","gin6"],["=","ji1","ji1"],["s","fuk6","bok3"]],"ser":0.3,"exact":false,"mos":[3.278,3.484,2.75,1.898,3.264,2.306,2.143,4.17,2.011,1.393],"rtf":0.027},{"id":"spk_s03__env_iphone_close__prompt_mtr_05__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_05","dur":4.706,"zh":"蘋果同橙都放喺枱面","ops":[["=","ping4","ping4"],["=","gwo2","gwo2"],["=","tung4","tung4"],["s","caang2","caan2"],["=","dou1","dou1"],["=","fong3","fong3"],["=","hai2","hai2"],["=","toi4","toi4"],["=","min6","min6"]],"ser":0.1111,"exact":false,"mos":[3.565,2.108,2.362,2.971,3.527,2.732,2.338,4.28,3.287,2.338],"rtf":0.034},{"id":"spk_s03__env_iphone_close__prompt_mtr_06__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_06","dur":5.126,"zh":"佢今日著咗一件藍色嘅衫","ops":[["s","keoi5","heoi5"],["=","gam1","gam1"],["=","jat6","jat6"],["=","zoek3","zoek3"],["=","zo2","zo2"],["=","jat1","jat1"],["s","gin6","gi6"],["s","laam4","naam4"],["=","sik1","sik1"],["=","ge3","ge3"],["s","saam1","saa1"]],"ser":0.3636,"exact":false,"mos":[3.553,2.911,2.672,2.324,3.272,2.511,2.388,3.866,2.447,1.837],"rtf":0.032},{"id":"spk_s03__env_iphone_close__prompt_mtr_07__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_07","dur":4.946,"zh":"我哋要去公園玩滑梯","ops":[["=","ngo5","ngo5"],["=","dei6","dei6"],["=","jiu3","jiu3"],["=","heoi3","heoi3"],["=","gung1","gung1"],["s","jyun5","jyu5"],["s","waan2","waa2"],["s","waat6","waak6"],["s","tai1","taai3"]],"ser":0.4444,"exact":false,"mos":[3.296,2.335,2.269,2.434,3.632,2.507,2.286,4.064,2.322,1.954],"rtf":0.033},{"id":"spk_s03__env_iphone_close__prompt_mtr_08__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_08","dur":4.966,"zh":"巴士好快就到達車站","ops":[["=","baa1","baa1"],["=","si2","si2"],["=","hou2","hou2"],["=","faai3","faai3"],["=","zau6","zau6"],["=","dou3","dou3"],["=","daat6","daat6"],["=","ce1","ce1"],["s","zaam6","zaa6"]],"ser":0.1111,"exact":false,"mos":[3.447,2.003,2.173,2.568,3.627,2.678,2.531,3.722,2.748,2.296],"rtf":0.039},{"id":"spk_s03__env_iphone_close__prompt_mtr_09__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_09","dur":6.546,"zh":"老師今日教我哋讀新嘅詞語","ops":[["=","lou5","lou5"],["=","si1","si1"],["=","gam1","gam1"],["=","jat6","jat6"],["=","gaau3","gaau3"],["=","ngo5","ngo5"],["=","dei6","dei6"],["=","duk6","duk6"],["=","san1","san1"],["=","ge3","ge3"],["=","ci4","ci4"],["=","jyu5","jyu5"]],"ser":0.0,"exact":true,"mos":[3.45,3.031,2.687,2.578,3.593,2.995,3.177,3.781,2.821,2.369],"rtf":0.029},{"id":"spk_s03__env_iphone_close__prompt_mtr_10__take_01","group":"iphone_close","env":"iphone_close","speaker":"spk_s03","device":"unknown","mic":"close","room":"private_room","prompt":"mtr_10","dur":5.726,"zh":"小狗喺草地上跑嚟跑去","ops":[["=","siu2","siu2"],["=","gau2","gau2"],["=","hai2","hai2"],["s","cou2","cau2"],["=","dei6","dei6"],["=","soeng6","soeng6"],["=","paau2","paau2"],["s","lai4","lei4"],["=","paau2","paau2"],["=","heoi3","heoi3"]],"ser":0.2,"exact":false,"mos":[3.647,2.151,2.408,3.523,3.682,2.507,2.81,4.084,3.043,2.41],"rtf":0.032}],"summary":{"n_clips":50,"alignment":{"substitutions":103,"deletions":3,"insertions":7},"components":{"onset":{"accuracy":0.8774,"correct":458,"total":522,"top_confusions":[{"ref":"z","hyp":"d","count":5},{"ref":"∅","hyp":"m","count":3},{"ref":"m","hyp":"b","count":2},{"ref":"t","hyp":"z","count":2},{"ref":"c","hyp":"j","count":2}]},"rime":{"accuracy":0.8697,"correct":454,"total":522,"top_confusions":[{"ref":"∅","hyp":"i","count":4},{"ref":"u","hyp":"o","count":4},{"ref":"yu","hyp":"a","count":3},{"ref":"aa","hyp":"a","count":2},{"ref":"ei","hyp":"i","count":2}]},"coda":{"accuracy":0.8621,"correct":450,"total":522,"top_confusions":[{"ref":"n","hyp":"∅","count":11},{"ref":"t","hyp":"k","count":9},{"ref":"∅","hyp":"k","count":8},{"ref":"∅","hyp":"n","count":6},{"ref":"ng","hyp":"n","count":5}]},"tone":{"accuracy":0.8582,"correct":448,"total":522,"top_confusions":[{"ref":"6","hyp":"4","count":6},{"ref":"6","hyp":"1","count":6},{"ref":"3","hyp":"6","count":6},{"ref":"2","hyp":"6","count":5},{"ref":"1","hyp":"3","count":5}]}}},"confusion":{"onset":[["g","g",55],["z","z",52],["j","j",50],["s","s",47],["h","h",46],["d","d",45],["c","c",23],["f","f",21],["l","l",18],["m","m",16],["t","t",16],["ng","ng",14],["p","p",14],["b","b",13],["w","w",8],["k","k",7],["∅","∅",5],["z","d",5],["n","n",4],["gw","gw",4],["∅","m",3],["m","b",2],["t","z",2],["c","j",2],["d","g",2],["j","h",2],["k","c",1],["m","∅",1],["∅","z",1],["t","∅",1],["h","p",1],["d","gw",1],["g","t",1],["z","c",1],["d","f",1],["g","h",1],["j","t",1],["f","m",1],["∅","k",1],["∅","g",1],["p","j",1],["gw","z",1],["f","l",1],["h","s",1],["t","g",1],["m","s",1],["k","∅",1],["g","∅",1],["j","ng",1],["z","j",1],["l","j",1],["s","w",1],["g","w",1],["s","t",1],["ng","b",1],["d","s",1],["h","f",1],["g","z",1],["j","d",1],["w","d",1],["w","c",1],["∅","t",1],["b","h",1],["s","d",1],["h","g",1],["f","d",1],["z","f",1],["b","f",1],["n","z",1],["f","b",1],["k","h",1],["l","n",1]],"rime":[["aa","aa",61],["i","i",61],["o","o",51],["a","a",46],["ou","ou",31],["u","u",29],["e","e",27],["yu","yu",25],["oe","oe",23],["ei","ei",22],["ai","ai",19],["aau","aau",15],["au","au",14],["eoi","eoi",13],["iu","iu",9],["oi","oi",4],["aai","aai",4],["∅","i",4],["u","o",4],["yu","a",3],["aa","a",2],["ei","i",2],["o","aa",2],["i","aa",2],["i","u",2],["e","i",2],["ai","ei",2],["a","i",1],["i","iu",1],["aa","oe",1],["ai","eoi",1],["∅","o",1],["i","∅",1],["ei","u",1],["yu","aa",1],["oe","ou",1],["i","ai",1],["i","oi",1],["u","i",1],["∅","eoi",1],["∅","a",1],["i","a",1],["o","oe",1],["ou","i",1],["ai","i",1],["oi","e",1],["eoi","∅",1],["a","∅",1],["a","o",1],["oe","ei",1],["o","iu",1],["a","eoi",1],["aa","yu",1],["e","aa",1],["aa","ai",1],["iu","ou",1],["eoi","aai",1],["u","au",1],["yu","ou",1],["aa","e",1],["ai","aa",1],["aa","ei",1],["ou","ei",1],["aai","a",1],["au","oe",1],["ou","o",1],["aa","i",1],["aa","u",1],["ai","aai",1],["ou","au",1]],"coda":[["∅","∅",282],["ng","ng",49],["n","n",45],["t","t",25],["m","m",23],["k","k",21],["n","∅",11],["t","k",9],["∅","k",8],["∅","n",6],["p","p",5],["ng","n",5],["∅","ng",4],["m","∅",4],["t","∅",4],["ng","∅",3],["n","ng",3],["t","n",2],["k","∅",2],["∅","m",2],["ng","t",2],["m","ng",1],["k","n",1],["ng","m",1],["m","n",1],["k","m",1],["n","t",1],["m","k",1]],"tone":[["1","1",117],["2","2",98],["6","6",90],["3","3",65],["4","4",41],["5","5",37],["6","4",6],["6","1",6],["3","6",6],["2","6",5],["1","3",5],["∅","6",3],["3","2",3],["3","4",3],["6","2",3],["3","1",3],["2","3",3],["1","6",3],["6","3",3],["1","∅",2],["∅","1",2],["2","1",2],["6","5",2],["1","2",2],["2","4",1],["2","5",1],["∅","2",1],["1","4",1],["∅","5",1],["4","6",1],["4","2",1],["4","3",1],["5","∅",1],["4","5",1],["5","1",1],["5","3",1]]}};
+const GROUPS = [
+  {key: "studio_reference", name: "Studio reference", sub: "env studio_reference", chips: ["Elgato Wave:3", "close", "studio", "spk_s01"]},
+  {key: "iphone_close", name: "iPhone close", sub: "env iphone_close", chips: ["phone", "close", "private room", "spk_s03"]},
+  {key: "iphone_far", name: "iPhone far", sub: "env iphone_far", chips: ["iPhone", "far", "room unknown", "spk_s01"]},
+  {key: "unknown_mtr", name: "MTR / public transport", sub: "env unknown", chips: ["phone", "normal", "public transport", "spk_s02"]},
+  {key: "unknown_android", name: "Android pack", sub: "env unknown", chips: ["Android", "distance unknown", "room unknown", "spk_s02"]},
+];
+const SHORT = {studio_reference: "Studio", iphone_close: "iPhone close", iphone_far: "iPhone far", unknown_mtr: "MTR", unknown_android: "Android"};
+// Suspected label shift in the Android pack: audio for prompt X actually reads prompt Y.
+const SHIFT = {mtr_04: "mtr_05", mtr_05: "mtr_06", mtr_06: "mtr_07", mtr_07: "mtr_08", mtr_08: "mtr_04"};
+const NS = "http://www.w3.org/2000/svg";
+const clips = DATA.clips;
+const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+const median = a => { const b = [...a].sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+const byGroup = k => clips.filter(c => c.group === k);
+const isFlagged = c => c.group === "unknown_android" && SHIFT[c.prompt];
+const fmt = (x, d = 3) => x.toFixed(d);
+
+function el(tag, attrs = {}, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.appendChild(n);
+  return n;
 }
-document.querySelectorAll('.demo').forEach(demo => {
+function txt(parent, x, y, s, attrs = {}) { const t = el("text", {x, y, ...attrs}, parent); t.textContent = s; return t; }
+
+/* tooltip */
+const tip = document.getElementById("tip");
+function showTip(e, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.hidden = true; }
+function hover(node, html) {
+  node.addEventListener("mousemove", e => showTip(e, typeof html === "function" ? html() : html));
+  node.addEventListener("mouseleave", hideTip);
+}
+
+/* realigned SER (for the flag) */
+const refByPrompt = {};
+byGroup("studio_reference").forEach(c => refByPrompt[c.prompt] = c.ops.filter(o => o[1]).map(o => o[1]));
+function lev(a, b) {
+  const dp = Array.from({length: a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + (a[i-1] !== b[j-1]));
+  return dp[a.length][b.length];
+}
+clips.forEach(c => {
+  if (!isFlagged(c)) { c.serFixed = c.ser; return; }
+  const ref = refByPrompt[SHIFT[c.prompt]], hyp = c.ops.filter(o => o[2]).map(o => o[2]);
+  c.serFixed = lev(ref, hyp) / ref.length;
+});
+const flagged = clips.filter(isFlagged);
+
+/* hero tiles */
+(function tiles() {
+  const sers = clips.map(c => c.ser), studio = mean(byGroup("studio_reference").map(c => c.ser));
+  const exact = clips.filter(c => c.exact).length;
+  const items = [
+    [`${exact}<small>/50</small>`, "clips transcribed with an exact Jyutping match"],
+    [fmt(mean(sers)), `mean SER (median ${fmt(median(sers))})`],
+    [fmt(studio), "mean SER on studio reference, the clean-audio floor"],
+    [`≈${fmt(mean(clips.map(c => c.serFixed)))}`, `mean SER if ${flagged.length} suspected mislabeled Android clips are realigned`, true],
+  ];
+  document.getElementById("tiles").innerHTML = items.map(([v, k, f]) =>
+    `<div class="tile${f ? " flag" : ""}"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
+})();
+
+/* inventory */
+(function inventory() {
+  const root = document.getElementById("inv");
+  GROUPS.forEach(g => {
+    const cs = byGroup(g.key).sort((a, b) => a.prompt.localeCompare(b.prompt));
+    const row = document.createElement("div"); row.className = "inv-row";
+    row.innerHTML = `<div class="inv-name">${g.name}<span>${g.sub} · ${cs.length} clips · ${fmt(mean(cs.map(c => c.dur)), 1)} s avg</span></div>
+      <div class="dots"></div><div class="inv-meta">${g.chips.map(c => `<span class="chip">${c}</span>`).join("")}</div>`;
+    const dots = row.querySelector(".dots");
+    cs.forEach(c => {
+      const d = document.createElement("span"); d.className = "dot";
+      d.style.opacity = .35 + .65 * (c.dur - 3) / 4.7;
+      hover(d, `<b>${c.prompt}</b> · ${c.dur.toFixed(2)} s<br>${c.zh}`);
+      dots.appendChild(d);
+    });
+    root.appendChild(row);
+  });
+})();
+
+/* MOS strip chart */
+const BANDS = [[1, 1.8, "bad", "--band-bad"], [1.8, 2.6, "poor", "--band-poor"], [2.6, 3.4, "fair", "--band-fair"], [3.4, 4.2, "good", "--band-good"], [4.2, 5, "excellent", "--band-exc"]];
+let mosSel = "all";
+function drawMosStrip() {
+  const svg = document.getElementById("mosStrip"); svg.innerHTML = "";
+  const M = DATA.metrics, W = 960, L = 128, R = 70, rowH = 30, T = 26, H = T + M.length * rowH + 26;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.minWidth = "640px";
+  const x = v => L + (v - 1) / 4 * (W - L - R);
+  BANDS.forEach(([a, b, name, tok]) => {
+    el("rect", {x: x(a), y: T - 6, width: x(b) - x(a), height: M.length * rowH + 6, fill: `var(${tok})`}, svg);
+    txt(svg, (x(a) + x(b)) / 2, T - 12, name, {"text-anchor": "middle"});
+  });
+  [1, 2, 3, 4, 5].forEach(v => txt(svg, x(v), H - 6, v, {"text-anchor": "middle"}));
+  M.forEach((m, i) => {
+    const cy = T + i * rowH + rowH / 2;
+    if (i === 3) el("line", {x1: 0, x2: W - R + 10, y1: T + i * rowH, y2: T + i * rowH, stroke: "var(--axis)", "stroke-dasharray": "2 3"}, svg);
+    const [fam, k] = m.split("_");
+    txt(svg, 0, cy + 4, k.toUpperCase(), {class: "lbl"});
+    txt(svg, 62, cy + 4, fam.toUpperCase(), {});
+    const shown = clips.filter(c => mosSel === "all" || c.group === mosSel);
+    clips.forEach((c, j) => {
+      const on = mosSel === "all" || c.group === mosSel;
+      const jitter = ((j * 37) % 11 - 5) * 1.6;
+      const dot = el("circle", {cx: x(c.mos[i]), cy: cy + jitter, r: on ? 4.2 : 3, fill: on ? "var(--accent)" : "var(--axis)", "fill-opacity": on ? .7 : .45, stroke: "var(--panel)", "stroke-width": 1}, svg);
+      hover(dot, `<b>${m}</b> ${c.mos[i].toFixed(2)}<br>${SHORT[c.group]} · ${c.prompt}`);
+    });
+    const mu = mean(shown.map(c => c.mos[i]));
+    const d = el("rect", {x: x(mu) - 5, y: cy - 5, width: 10, height: 10, fill: "var(--ink)", stroke: "var(--panel)", "stroke-width": 2, transform: `rotate(45 ${x(mu)} ${cy})`}, svg);
+    hover(d, `<b>${m}</b> mean ${mu.toFixed(2)} (n=${shown.length})`);
+    txt(svg, W - R + 14, cy + 4, mu.toFixed(2), {class: "val"});
+  });
+}
+(function mosFilter() {
+  const root = document.getElementById("mosFilter");
+  [["all", "All 50 clips"], ...GROUPS.map(g => [g.key, g.name])].forEach(([k, n]) => {
+    const b = document.createElement("button"); b.type = "button"; b.id = "mos-" + k; b.textContent = n;
+    b.setAttribute("aria-pressed", k === mosSel);
+    b.onclick = () => { mosSel = k; root.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawMosStrip(); };
+    root.appendChild(b);
+  });
+  drawMosStrip();
+})();
+
+/* MOS heatmap: condition x metric */
+function seqColor(t) { const i = Math.max(0, Math.min(5, Math.round(t * 5))); return `var(--seq-${i})`; }
+(function mosHeat() {
+  const svg = document.getElementById("mosHeat"), M = DATA.metrics;
+  const L = 150, T = 44, cw = 76, ch = 36, W = L + M.length * cw, H = T + GROUPS.length * ch + 4;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.minWidth = "720px";
+  M.forEach((m, j) => {
+    const [fam, k] = m.split("_");
+    txt(svg, L + j * cw + cw / 2, 16, fam.toUpperCase(), {"text-anchor": "middle"});
+    txt(svg, L + j * cw + cw / 2, 32, k.toUpperCase(), {"text-anchor": "middle", class: "lbl"});
+  });
+  GROUPS.forEach((g, i) => {
+    const cs = byGroup(g.key), y = T + i * ch;
+    txt(svg, 0, y + ch / 2 + 4, g.name, {class: "lbl"});
+    M.forEach((m, j) => {
+      const mu = mean(cs.map(c => c.mos[j])), t = (mu - 1.8) / (4.2 - 1.8);
+      const r = el("rect", {x: L + j * cw + 1, y: y + 1, width: cw - 2, height: ch - 2, rx: 4, fill: seqColor(t)}, svg);
+      const s = mean(byGroup("studio_reference").map(c => c.mos[j]));
+      hover(r, `<b>${g.name}</b><br>${m} mean ${mu.toFixed(2)}${g.key !== "studio_reference" ? `<br>vs studio ${s.toFixed(2)} (${mu - s >= 0 ? "+" : ""}${(mu - s).toFixed(2)})` : ""}`);
+      const tc = t > .55 ? "#ffffff" : "var(--ink)";
+      const lab = txt(svg, L + j * cw + cw / 2, y + ch / 2 + 4, mu.toFixed(2), {"text-anchor": "middle", class: "val"});
+      lab.style.fill = tc; lab.style.pointerEvents = "none";
+    });
+  });
+})();
+
+/* SER by condition */
+(function serChart() {
+  const svg = document.getElementById("serChart");
+  const W = 960, L = 190, R = 90, T = 30, rowH = 56, H = T + GROUPS.length * rowH + 30, xmax = 1.3;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.minWidth = "640px";
+  const x = v => L + v / xmax * (W - L - R);
+  [0, .2, .4, .6, .8, 1, 1.2].forEach(v => {
+    el("line", {x1: x(v), x2: x(v), y1: T - 8, y2: H - 24, stroke: "var(--grid)"}, svg);
+    txt(svg, x(v), H - 8, v.toFixed(1), {"text-anchor": "middle"});
+  });
+  txt(svg, W - R, T - 14, "SER →", {"text-anchor": "end"});
+  const studio = mean(byGroup("studio_reference").map(c => c.ser));
+  GROUPS.forEach((g, i) => {
+    const cs = byGroup(g.key), cy = T + i * rowH + rowH / 2, mu = mean(cs.map(c => c.ser));
+    txt(svg, 0, cy - 2, g.name, {class: "lbl"});
+    txt(svg, 0, cy + 14, `${cs.filter(c => c.exact).length}/10 exact`, {});
+    const bar = el("rect", {x: x(0), y: cy - 9, width: Math.max(2, x(mu) - x(0)), height: 18, rx: 4, fill: g.key === "studio_reference" ? "var(--studio)" : "var(--accent)", "fill-opacity": .22, class: "grow"}, svg);
+    el("line", {x1: x(mu), x2: x(mu), y1: cy - 13, y2: cy + 13, stroke: g.key === "studio_reference" ? "var(--studio)" : "var(--accent)", "stroke-width": 2.5}, svg);
+    cs.forEach((c, j) => {
+      const fl = isFlagged(c), jit = ((j * 7) % 5 - 2) * 3.5;
+      const node = fl
+        ? el("rect", {x: x(c.ser) - 5, y: cy + jit - 5, width: 10, height: 10, fill: "var(--panel)", stroke: "var(--warn-edge)", "stroke-width": 2, transform: `rotate(45 ${x(c.ser)} ${cy + jit})`}, svg)
+        : el("circle", {cx: x(c.ser), cy: cy + jit, r: 4.5, fill: "var(--ink)", "fill-opacity": .65, stroke: "var(--panel)", "stroke-width": 1.2}, svg);
+      hover(node, `<b>${c.prompt}</b> · SER ${c.ser.toFixed(3)}${fl ? `<br>suspected label shift; reads like ${SHIFT[c.prompt]} (SER ${c.serFixed.toFixed(3)} realigned)` : ""}<br>${c.zh}`);
+    });
+    txt(svg, W - R + 12, cy + 4, mu.toFixed(3), {class: "val"});
+  });
+  el("line", {x1: x(studio), x2: x(studio), y1: T - 8, y2: H - 24, stroke: "var(--studio)", "stroke-dasharray": "4 4", "stroke-width": 1.5}, svg);
+  txt(svg, x(studio) + 6, T - 14, `studio mean ${studio.toFixed(3)}`, {}).style.fill = "var(--studio)";
+})();
+
+/* flag callout */
+(function flag() {
+  const a = byGroup("unknown_android"), aFix = mean(a.map(c => c.serFixed));
+  const rows = flagged.map(c => `<span class="mono">${c.prompt}→${SHIFT[c.prompt]}</span>`).join(", ");
+  document.getElementById("flag").innerHTML = `
+    <strong>Data check: 5 Android clips look mislabeled</strong>
+    <p>In the Android pack, the hypotheses for ${rows} match a <em>different</em> canonical prompt almost syllable for syllable. This looks like a shift in the sequential filename-to-prompt mapping noted in the manifest. These five clips score SER ≥ 1.0 and account for most of the Android pack's ${fmt(mean(a.map(c => c.ser)))} mean SER.</p>
+    <p>With the references realigned, the Android pack falls to <strong>${fmt(aFix)}</strong> and the overall mean falls from <strong>${fmt(mean(clips.map(c => c.ser)))}</strong> to <strong>${fmt(mean(clips.map(c => c.serFixed)))}</strong>. Headline numbers in this report still use the manifest as published. Fix <code>metadata/samples_manifest_v1.csv</code> and re-score to confirm.</p>`;
+})();
+
+/* scatter */
+(function scatter() {
+  const svg = document.getElementById("scatter"), W = 460, H = 300, L = 40, B = 34, T = 10, R = 10;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = v => L + (v - 1) / 3 * (W - L - R), y = v => T + (1 - v / 1.3) * (H - T - B);
+  [1, 2, 3, 4].forEach(v => { el("line", {x1: x(v), x2: x(v), y1: T, y2: H - B, stroke: "var(--grid)"}, svg); txt(svg, x(v), H - B + 16, v, {"text-anchor": "middle"}); });
+  [0, .4, .8, 1.2].forEach(v => { el("line", {x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--grid)"}, svg); txt(svg, L - 6, y(v) + 4, v.toFixed(1), {"text-anchor": "end"}); });
+  txt(svg, (L + W) / 2, H - 2, "DNSMOS OVRL", {"text-anchor": "middle"});
+  const xi = DATA.metrics.indexOf("dnsmos_ovrl");
+  clips.forEach(c => {
+    const fl = isFlagged(c), cx = x(c.mos[xi]), cy = y(c.ser);
+    const n = fl ? el("rect", {x: cx - 5, y: cy - 5, width: 10, height: 10, fill: "var(--panel)", stroke: "var(--warn-edge)", "stroke-width": 2, transform: `rotate(45 ${cx} ${cy})`}, svg)
+      : el("circle", {cx, cy, r: 4.5, fill: c.group === "studio_reference" ? "var(--studio)" : "var(--accent)", "fill-opacity": .75, stroke: "var(--panel)", "stroke-width": 1.2}, svg);
+    hover(n, `<b>${SHORT[c.group]} · ${c.prompt}</b><br>OVRL ${c.mos[xi].toFixed(2)} · SER ${c.ser.toFixed(3)}`);
+  });
+  const ok = clips.filter(c => !isFlagged(c)), xs = ok.map(c => c.mos[xi]), ys = ok.map(c => c.ser);
+  const mx = mean(xs), my = mean(ys);
+  const r = xs.reduce((s, v, i) => s + (v - mx) * (ys[i] - my), 0) / Math.sqrt(xs.reduce((s, v) => s + (v - mx) ** 2, 0) * ys.reduce((s, v) => s + (v - my) ** 2, 0));
+  const p = svg.parentNode.querySelector("p");
+  p.innerHTML += ` Excluding them, Pearson r = <strong>${r.toFixed(2)}</strong>, so audio quality explains almost none of the error. <span style="white-space:nowrap"><span class="sw" style="background:var(--studio)"></span>studio</span> <span style="white-space:nowrap"><span class="sw" style="background:var(--accent)"></span>phone</span>`;
+})();
+
+/* SER table */
+(function serTable() {
+  const studio = mean(byGroup("studio_reference").map(c => c.ser));
+  const rows = GROUPS.map(g => {
+    const cs = byGroup(g.key), mu = mean(cs.map(c => c.ser));
+    return `<tr><td>${g.name}</td><td class="num">${fmt(mu)}</td><td class="num">${fmt(median(cs.map(c => c.ser)))}</td><td class="num">${g.key === "studio_reference" ? "—" : "×" + (mu / studio).toFixed(1)}</td></tr>`;
+  }).join("");
+  document.getElementById("serTable").innerHTML = `<thead><tr><th>Condition</th><th class="num">Mean</th><th class="num">Median</th><th class="num">vs studio</th></tr></thead><tbody>${rows}
+    <tr><td><strong>All 50</strong></td><td class="num"><strong>${fmt(mean(clips.map(c => c.ser)))}</strong></td><td class="num">${fmt(median(clips.map(c => c.ser)))}</td><td class="num"></td></tr></tbody>`;
+})();
+
+/* component accuracy */
+(function compAcc() {
+  const svg = document.getElementById("compAcc"), comps = ["onset", "rime", "coda", "tone"];
+  const W = 460, L = 60, R = 70, rowH = 40, T = 8, H = T + comps.length * rowH + 22;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const lo = .8, hi = .9, x = v => L + (v - lo) / (hi - lo) * (W - L - R);
+  [.8, .85, .9].forEach(v => { el("line", {x1: x(v), x2: x(v), y1: T, y2: H - 20, stroke: "var(--grid)"}, svg); txt(svg, x(v), H - 4, v.toFixed(2), {"text-anchor": "middle"}); });
+  comps.forEach((k, i) => {
+    const s = DATA.summary.components[k], cy = T + i * rowH + rowH / 2;
+    txt(svg, 0, cy + 4, k, {class: "lbl"});
+    const b = el("rect", {x: x(lo), y: cy - 8, width: x(s.accuracy) - x(lo), height: 16, rx: 4, fill: "var(--accent)", class: "grow"}, svg);
+    hover(b, `<b>${k}</b> ${s.correct}/${s.total} correct (${(s.accuracy * 100).toFixed(1)}%)`);
+    txt(svg, x(s.accuracy) + 8, cy + 4, (s.accuracy * 100).toFixed(1) + "%", {class: "val"});
+  });
+  const a = DATA.summary.alignment;
+  svg.insertAdjacentHTML("afterend", `<p class="small" style="margin-top:8px">Axis starts at 80%. Alignment over 50 clips: ${a.substitutions} substituted, ${a.deletions} deleted, ${a.insertions} inserted syllables.</p>`);
+})();
+
+/* top confusion pairs */
+(function pairs() {
+  const all = [];
+  for (const [k, s] of Object.entries(DATA.summary.components)) s.top_confusions.forEach(t => all.push({k, ...t}));
+  all.sort((a, b) => b.count - a.count);
+  const top = all.slice(0, 10), max = top[0].count;
+  document.getElementById("pairs").innerHTML = top.map(t => `
+    <div class="pair"><span class="comp">${t.k}</span>
+      <div><span class="ex">${t.ref}<i>→</i>${t.hyp}</span><div class="bar grow" style="width:${t.count / max * 100}%"></div></div>
+      <span class="n">${t.count}</span></div>`).join("");
+})();
+
+/* heatmaps */
+function heat(id, comp, classes) {
+  const svg = document.getElementById(id), cells = {};
+  DATA.confusion[comp].forEach(([r, h, n]) => cells[r + "|" + h] = n);
+  const L = 44, T = 40, cs = 44, n = classes.length, W = L + n * cs + 4, H = T + n * cs + 4;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.maxWidth = W * 1.1 + "px"; svg.style.width = "100%";
+  const off = Object.entries(cells).filter(([k]) => { const [a, b] = k.split("|"); return a !== b; }).map(([, v]) => v);
+  const max = Math.max(...off);
+  txt(svg, L + n * cs / 2, 12, "hypothesis →", {"text-anchor": "middle"});
+  classes.forEach((c, j) => txt(svg, L + j * cs + cs / 2, T - 8, c, {"text-anchor": "middle", class: "lbl"}));
+  classes.forEach((r, i) => {
+    txt(svg, L - 10, T + i * cs + cs / 2 + 4, r, {"text-anchor": "end", class: "lbl"});
+    const rowTotal = classes.reduce((s, h) => s + (cells[r + "|" + h] || 0), 0);
+    classes.forEach((h, j) => {
+      const v = cells[r + "|" + h] || 0, diag = r === h;
+      const fill = diag ? "var(--grid)" : v ? seqColor(.2 + .8 * v / max) : "var(--seq-0)";
+      const rect = el("rect", {x: L + j * cs + 1, y: T + i * cs + 1, width: cs - 2, height: cs - 2, rx: 5, fill}, svg);
+      hover(rect, `<b>${comp}</b> ref ${r} → hyp ${h}<br>${v} syllable${v === 1 ? "" : "s"}${rowTotal ? ` (${(v / rowTotal * 100).toFixed(0)}% of ref ${r})` : ""}`);
+      if (v) {
+        const t = txt(svg, L + j * cs + cs / 2, T + i * cs + cs / 2 + 4, v, {"text-anchor": "middle", class: "val"});
+        t.style.pointerEvents = "none";
+        t.style.fill = !diag && v / max > .6 ? "#ffffff" : diag ? "var(--muted)" : "var(--ink)";
+      }
+    });
+  });
+}
+heat("heatTone", "tone", ["1", "2", "3", "4", "5", "6", "∅"]);
+heat("heatCoda", "coda", ["∅", "m", "n", "ng", "p", "t", "k"]);
+
+/* clip explorer */
+let clipSel = "errors";
+function drawClips() {
+  const root = document.getElementById("clips");
+  let list = clips.filter(c => clipSel === "all" ? true : clipSel === "errors" ? !c.exact : c.group === clipSel);
+  list = [...list].sort((a, b) => clipSel === "errors" ? b.ser - a.ser : GROUPS.findIndex(g => g.key === a.group) - GROUPS.findIndex(g => g.key === b.group) || a.prompt.localeCompare(b.prompt));
+  root.innerHTML = list.map(c => {
+    const syl = c.ops.map(([op, r, h]) => op === "=" ? `<span class="s">${r}</span>`
+      : op === "s" ? `<span class="s sub" title="${r} → ${h}"><span>${r}</span><span class="h">${h}</span></span>`
+      : op === "d" ? `<span class="s del" title="deleted">${r}</span>`
+      : `<span class="s ins" title="inserted">+${h}</span>`).join("");
+    return `<div class="clip" tabindex="0">
+      <div class="pid">${c.prompt}<span>${SHORT[c.group]}</span></div>
+      <div><div class="zh">${c.zh}${isFlagged(c) ? `<span class="flagtag">label? reads as ${SHIFT[c.prompt]}</span>` : ""}</div><div class="syl">${syl}</div></div>
+      <div class="ser ${c.exact ? "ok" : ""}">${c.exact ? "exact" : `<span class="${c.ser >= .5 ? "bad" : ""}">${c.ser.toFixed(2)}</span>`}<small>SER</small></div>
+    </div>`;
+  }).join("") || `<p class="small" style="padding:12px 4px">No clips in this view.</p>`;
+}
+(function clipFilter() {
+  const root = document.getElementById("clipFilter");
+  [["errors", `With errors (${clips.filter(c => !c.exact).length})`], ["all", "All 50"], ...GROUPS.map(g => [g.key, g.name])].forEach(([k, n]) => {
+    const b = document.createElement("button"); b.type = "button"; b.id = "clip-" + k; b.textContent = n;
+    b.setAttribute("aria-pressed", k === clipSel);
+    b.onclick = () => { clipSel = k; root.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); drawClips(); };
+    root.appendChild(b);
+  });
+  drawClips();
+})();
+
+/* takeaways */
+(function take() {
+  const s = g => mean(byGroup(g).map(c => c.ser));
+  const items = [
+    `Baseline as scored: <strong>${clips.filter(c => c.exact).length}/50 exact</strong>, mean SER <strong>${fmt(mean(clips.map(c => c.ser)))}</strong>, median ${fmt(median(clips.map(c => c.ser)))}.`,
+    `Studio reference is the floor at <strong>${fmt(s("studio_reference"))}</strong>. The phone conditions land at ${fmt(s("unknown_mtr"))} (MTR), ${fmt(s("iphone_far"))} (iPhone far) and ${fmt(s("iphone_close"))} (iPhone close), which is roughly 1.4–2× the studio error.`,
+    `The Android pack's <strong>${fmt(s("unknown_android"))}</strong> mostly comes from 5 clips that look mislabeled. Realigned, it drops to about ${fmt(mean(byGroup("unknown_android").map(c => c.serFixed)))} and the overall mean to about ${fmt(mean(clips.map(c => c.serFixed)))}. Fix the manifest before quoting the "unknown" slice.`,
+    `Audio quality is poor (OVRL ≈ 2.2–2.3) because of background noise, not the voice, and it barely tracks recognition errors. Noisy MTR clips decode better than quiet iPhone-close ones.`,
+    `Error mass sits in codas (<span class="mono">-n</span> dropped, <span class="mono">-t → -k</span>) and tone 6 (<span class="mono">6→4</span>, <span class="mono">6→1</span>). This points to acoustic-model work rather than front-end processing.`,
+  ];
+  document.getElementById("take").innerHTML = items.map(t => `<li><div>${t}</div></li>`).join("");
+})();
+</script>
+<script>
+
+document.querySelectorAll('.ddemo').forEach(demo => {
   const audio = demo.querySelector('audio');
-  const boxes = [...demo.querySelectorAll('.box[data-start]')];
-  const canvas = demo.querySelector('canvas.wave');
-  const peaks = JSON.parse(demo.querySelector('script.peaks').textContent);
+  const boxes = [...demo.querySelectorAll('.dbox[data-start]')];
+  const canvas = demo.querySelector('canvas.dwave');
+  const peaks = JSON.parse(demo.querySelector('script.dpeaks').textContent);
   const dur = parseFloat(canvas.dataset.dur);
+  const draw = (t) => {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w) return;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    const g = canvas.getContext('2d');
+    g.scale(dpr, dpr);
+    g.clearRect(0, 0, w, h);
+    const mid = h / 2, n = peaks.length;
+    g.fillStyle = '#90a4ae';
+    for (let i = 0; i < n; i++) {
+      const x = (i / n) * w, bh = Math.max(1, peaks[i] * (h - 6));
+      g.fillRect(x, mid - bh / 2, Math.max(1, w / n - 0.3), bh);
+    }
+    if (t !== null && dur > 0) { g.fillStyle = '#1a73e8'; g.fillRect((t / dur) * w - 1, 0, 2, h); }
+  };
   const render = (t) => {
-    drawWave(canvas, peaks, t, dur);
+    draw(t);
     boxes.forEach(b => {
       const s = parseFloat(b.dataset.start), e = parseFloat(b.dataset.end);
-      b.classList.toggle('active', t !== null && t >= s && t < e);
+      b.classList.toggle('dactive', t !== null && t >= s && t < e);
     });
   };
   render(null);
   audio.addEventListener('timeupdate', () => render(audio.currentTime));
   audio.addEventListener('seeked', () => render(audio.currentTime));
   window.addEventListener('resize', () => render(audio.currentTime));
-  const seek = (ev) => {
+  canvas.addEventListener('click', (ev) => {
     const r = canvas.getBoundingClientRect();
     audio.currentTime = Math.min(Math.max((ev.clientX - r.left) / r.width, 0), 1) * dur;
-  };
-  canvas.addEventListener('click', (ev) => { seek(ev); audio.play(); });
+    audio.play();
+  });
   boxes.forEach(b => b.addEventListener('click', () => {
     audio.currentTime = parseFloat(b.dataset.start);
     audio.play();
   }));
 });
+
 </script>
-</body></html>
+</body>
+</html>
