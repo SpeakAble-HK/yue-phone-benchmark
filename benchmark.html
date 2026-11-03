@@ -371,6 +371,11 @@ const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
 const median = a => { const b = [...a].sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
 const byGroup = k => clips.filter(c => c.group === k);
 const isFlagged = c => c.group === "unknown_android" && SHIFT[c.prompt];
+// Speaker prompt deviation (not a model error): three mtr_10 clips where the
+// speaker said min6 (面, "草地面上…") instead of the prompted lai4 (嚟,
+// "…跑嚟跑去"). Shows up as a min6 insertion in the hypothesis.
+const MIN6 = new Set(["spk_s01__env_iphone_far__prompt_mtr_10__take_01", "spk_s01__env_studio_reference__prompt_mtr_10__take_01", "spk_s02__env_unknown__prompt_mtr_10__take_01"]);
+const isMin6 = c => MIN6.has(c.id);
 const fmt = (x, d = 3) => x.toFixed(d);
 
 function el(tag, attrs = {}, parent) {
@@ -539,7 +544,7 @@ function seqColor(t) { const i = Math.max(0, Math.min(5, Math.round(t * 5))); re
       const node = fl
         ? el("rect", {x: x(c.ser) - 5, y: cy + jit - 5, width: 10, height: 10, fill: "var(--panel)", stroke: "var(--warn-edge)", "stroke-width": 2, transform: `rotate(45 ${x(c.ser)} ${cy + jit})`}, svg)
         : el("circle", {cx: x(c.ser), cy: cy + jit, r: 4.5, fill: "var(--ink)", "fill-opacity": .65, stroke: "var(--panel)", "stroke-width": 1.2}, svg);
-      hover(node, `<b>${c.prompt}</b> · SER ${c.ser.toFixed(3)}${fl ? `<br>suspected label shift; reads like ${SHIFT[c.prompt]} (SER ${c.serFixed.toFixed(3)} realigned)` : ""}<br>${c.zh}`);
+      hover(node, `<b>${c.prompt}</b> · SER ${c.ser.toFixed(3)}${fl ? `<br>suspected label shift; reads like ${SHIFT[c.prompt]} (SER ${c.serFixed.toFixed(3)} realigned)` : ""}${isMin6(c) ? `<br>speaker deviation: said min6 (面), prompt has lai4 (嚟)` : ""}<br>${c.zh}`);
     });
     txt(svg, W - R + 12, cy + 4, mu.toFixed(3), {class: "val"});
   });
@@ -662,7 +667,7 @@ function drawClips() {
       : `<span class="s ins" title="inserted">+${h}</span>`).join("");
     return `<div class="clip" tabindex="0">
       <div class="pid">${c.prompt}<span>${SHORT[c.group]}</span></div>
-      <div><div class="zh">${c.zh}${isFlagged(c) ? `<span class="flagtag">label? reads as ${SHIFT[c.prompt]}</span>` : ""}</div><div class="syl">${syl}</div></div>
+      <div><div class="zh">${c.zh}${isFlagged(c) ? `<span class="flagtag">label? reads as ${SHIFT[c.prompt]}</span>` : ""}${isMin6(c) ? `<span class="flagtag">speaker said min6 (面), prompt lai4 (嚟)</span>` : ""}</div><div class="syl">${syl}</div></div>
       <div class="ser ${c.exact ? "ok" : ""}">${c.exact ? "exact" : `<span class="${c.ser >= .5 ? "bad" : ""}">${c.ser.toFixed(2)}</span>`}<small>SER</small></div>
     </div>`;
   }).join("") || `<p class="small" style="padding:12px 4px">No clips in this view.</p>`;
