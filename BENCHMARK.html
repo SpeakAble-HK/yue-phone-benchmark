@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="yue-Hant-HK"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>yue-phone benchmark v1 — demo</title>
+<title>yue-phone benchmark v1</title>
 <style>
 body{font-family:system-ui,-apple-system,sans-serif;max-width:960px;margin:0 auto;padding:1.2rem;color:#222}
 h1{font-size:1.5rem}h2{font-size:1.2rem;margin-top:2rem}.muted{color:#666;font-size:.9rem}
@@ -13,6 +13,7 @@ audio{width:100%;margin:.4rem 0}
 .chip .han{font-size:1rem}
 .chip small{color:#555}
 .match{background:#e6f4ea}.sub{background:#fce8e6;border-color:#c5221f}.del{background:#f1f3f4;border-style:dashed}
+.wave{width:100%;height:64px;display:block;background:#fafafa;border:1px solid #ddd;border-radius:4px;cursor:pointer}
 .tier{position:relative;height:3.2rem;background:#f6f6f6;border:1px solid #ddd;border-radius:4px;margin:.4rem 0}
 .box{position:absolute;top:0;bottom:0;overflow:hidden;border-top:4px solid;border-radius:3px;font-size:.75rem;
  font-family:ui-monospace,monospace;text-align:center;cursor:pointer;padding-top:2px}
@@ -22,28 +23,98 @@ audio{width:100%;margin:.4rem 0}
 .box.ins{background:rgba(234,134,0,.25);border-bottom:3px dashed #ea8600}
 .box.active{outline:3px solid #1a73e8}
 .legend{font-size:.8rem;color:#555}
-</style></head><body>
+
+table{border-collapse:collapse;margin:.6rem 0}td,th{border:1px solid #ccc;padding:.25rem .6rem;font-size:.9rem;text-align:left}
+img.fig{max-width:100%;border:1px solid #ddd;border-radius:4px;margin:.4rem 0}</style></head><body>
 <h1>yue-phone v2 — Cantonese phone benchmark (50 clips)</h1>
-<p>Baseline ASR vs reference on the 50-clip set: <b>14/50 exact</b>, mean syllable
-error <b>0.232</b>, median <b>0.139</b>. Model: fine-tuned wav2vec2 + BERT-style
-Jyutping, ~6k hours Cantonese, iterative pseudo-label correction.
-Full report: <a href="https://github.com/SpeakAble-HK/speakable-phone-benchmark/blob/main/BENCHMARK.md">BENCHMARK.md</a>
-(private repo). Worst-3 non-android clips below with time-aligned hypotheses
-(<a href="https://yue-phone.hon9kon9ize.com/docs">/v1/phoneme/detail</a>, boxes span
-each syllable's CTC window — a guide, not forced alignment).</p>
+<p>Scoring-input audio: 16 kHz mono WAVs. Systems: <b>yue-phone v2</b>
+(fine-tuned wav2vec2 + BERT-style Jyutping, ~6k hours Cantonese, iterative
+pseudo-label correction) on original vs sherpa-onnx DPDFNet dpdfnet8-enhanced
+input. Quality raters: DNSMOS P.835 + SIGMOS P.804.
+Full data: private repo <code>speakable-phone-benchmark</code>
+(<code>BENCHMARK.md</code>).</p>
+
+<h2>1. Inventory</h2>
+<p>50 included clips, mean duration 5.4 s (3.1–7.7 s). 10 canonical prompts × 5 clips.</p>
+<table><tr><th>environment_family</th><th>clips</th><th>mic_distance</th><th>room</th><th>speaker</th></tr>
+<tr><td>studio_reference</td><td>10</td><td>close</td><td>studio</td><td>spk_s01</td></tr>
+<tr><td>iphone_far</td><td>10</td><td>far</td><td>unknown</td><td>spk_s01</td></tr>
+<tr><td>iphone_close</td><td>10</td><td>close</td><td>private_room</td><td>spk_s03</td></tr>
+<tr><td>unknown (public-transport/MTR)</td><td>10</td><td>normal</td><td>public_transport</td><td>spk_s02</td></tr>
+<tr><td>unknown (android pack)</td><td>10</td><td>unknown</td><td>unknown</td><td>spk_s02</td></tr></table>
+<img class="fig" src="figs/env_distribution.png" alt="inventory distribution">
+
+<h2>2. Audio quality: DNSMOS + SIGMOS (original input)</h2>
+<p>Scale (standard 5-point ACR anchors): <b>bad</b> 1.0–1.8, <b>poor</b> 1.8–2.6,
+<b>fair</b> 2.6–3.4, <b>good</b> 3.4–4.2, <b>excellent</b> 4.2–5.0.
+DNSMOS P.835: SIG = speech, BAK = background, OVRL = overall.
+SIGMOS P.804: COL/DISC/LOUD/NOISE/REVERB/SIG/OVRL. Per-clip distributions
+(◆ = mean):</p>
+<img class="fig" src="figs/mos_dist_original.png" alt="MOS per-clip distribution">
+<p>Reading: overall quality is <b>poor</b> (both OVRL means ≈ 2.2–2.3) —
+background noise is the problem (BAK ≈ 2.5, NOISE ≈ 2.5), not the voice itself
+(SIG ≈ 3.2 fair, DISC ≈ 3.5 good). Reverb is a non-issue (≈ 3.9 good).</p>
+
+<h2>3. Enhancement comparison: dpdfnet8</h2>
+<p>sherpa-onnx 1.13.8 offline denoiser, dpdfnet8 (best 16 kHz quality). Mean overall quality by environment (original → enhanced):</p>
+<table><tr><th>environment</th><th>dnsmos_ovrl</th><th>sigmos_ovrl</th></tr>
+<tr><td>studio_reference</td><td>2.71 → 3.06 (+0.35)</td><td>2.65 → 3.02 (+0.37)</td></tr>
+<tr><td>iphone_close</td><td>2.58 → 3.08 (+0.50)</td><td>2.11 → 2.65 (+0.54)</td></tr>
+<tr><td>iphone_far</td><td>1.94 → 3.02 (+1.09)</td><td>2.08 → 2.69 (+0.62)</td></tr>
+<tr><td>unknown</td><td>2.14 → 2.99 (+0.85)</td><td>2.19 → 2.91 (+0.73)</td></tr></table>
+<img class="fig" src="figs/mos_ovrl_by_env.png" alt="overall quality by environment">
+<img class="fig" src="figs/mos_delta.png" alt="mean change per metric">
+<p>Mean change per metric (n=50): dnsmos_sig +0.04, <b>bak +1.51</b>, ovrl +0.73;
+sigmos_col +0.62, disc +0.53, loud +0.52, <b>noise +1.84</b>, reverb +0.26,
+sig +0.45, ovrl +0.60. The denoiser fixes background, barely touches signal.</p>
+
+<h2>4. Baseline model: yue-phone v2</h2>
+<p>Fine-tuned wav2vec2 with BERT-style Jyutping modeling; ~6k hours Cantonese with
+iterative pseudo-label correction. Served on GPU via <code>/v1/phoneme</code>
+(~0.03–0.05 RTF).</p>
+
+<h2>5. ASR: yue-phone, original vs enhanced input</h2>
 <table><tr><th>input</th><th>exact</th><th>mean SER</th><th>median SER</th></tr>
 <tr><td>original</td><td>14/50</td><td>0.232</td><td>0.139</td></tr>
 <tr><td>enhanced (dpdfnet8)</td><td>13/50</td><td>0.240</td><td>0.167</td></tr></table>
-<p class="legend">Syllable colours: green = correct, red = substitution, dashed grey = reference deleted, orange dashed = model insertion.</p>
+<img class="fig" src="figs/ser_by_env.png" alt="SER by environment">
+<p>Mean SER by environment (original → enhanced): studio_reference 0.093 → 0.103,
+iphone_close 0.188 → 0.199, iphone_far 0.144 → 0.120 (only gain),
+unknown 0.369 → 0.389. 23/50 transcripts change; net effect nil-to-negative.</p>
+
+<h2>6. Confusion analysis (onset / rime / coda / tone)</h2>
+<p>Syllables split four ways (rime = vocalic nucleus incl. i/u glides;
+coda ∈ m/n/ng/p/t/k/∅). Component accuracy (original → enhanced):
+onset 0.877 → 0.855, rime 0.870 → 0.864, coda 0.862 → 0.857, tone 0.858 → 0.860.</p>
+<img class="fig" src="figs/component_accuracy.png" alt="component accuracy">
+<img class="fig" src="figs/confusion_tone_original.png" alt="tone confusion">
+<img class="fig" src="figs/confusion_coda_original.png" alt="coda confusion">
+<p>Top patterns (stable across both sets): coda <b>n→∅</b> (x11), <b>t→k</b> (x9);
+tone <b>6→4 / 6→1</b> (x6 each); onset <b>z→d</b> (x5); rime <b>u→o</b>,
+<b>yu→a</b>. Weak spots: nasal/stop codas and tone 6.</p>
+
+<h2>7. Takeaways</h2>
+<ul><li>yue-phone v1 baseline: 14/50 exact, mean SER 0.232 (median 0.139).</li>
+<li>Hardest slice: unknown (0.369); easiest: studio_reference (0.093).</li>
+<li>dpdfnet8 massively improves background MOS (+1.5 bak / +1.8 noise) with no ASR gain.</li>
+<li>Error mass sits in codas (−n drop, −t→−k) and tone 6 — acoustic-model work, not denoising.</li></ul>
+
+<h2>8. Worst-clip demos (time-aligned hypotheses)</h2>
+<p>Boxes span each syllable's CTC window from
+<a href="https://yue-phone.hon9kon9ize.com/docs">/v1/phoneme/detail</a> (a guide,
+not forced alignment). Click a box to hear that segment.</p>
+<p class="legend">Green = correct, red = substitution, dashed grey = reference deleted, orange dashed = model insertion.</p>
 
 <section class="demo" id="spk_s03__env_iphone_close__prompt_mtr_07__take_01">
 <h3>spk_s03__env_iphone_close__prompt_mtr_07__take_01</h3>
 <p class="muted">iphone_close · ref mtr_07 ·
 syllable error rate 0.444 · duration 4.93s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
 <audio controls preload="metadata" src="assets/spk_s03__env_iphone_close__prompt_mtr_07__take_01.wav"></audio>
+<canvas class="wave" data-dur="4.934"></canvas>
+<script type="application/json" class="peaks">[0.0, 0.0, 0.0, 0.014, 0.022, 0.023, 0.013, 0.042, 0.067, 0.086, 0.083, 0.065, 0.045, 0.043, 0.043, 0.02, 0.021, 0.028, 0.017, 0.015, 0.01, 0.011, 0.014, 0.011, 0.012, 0.019, 0.022, 0.031, 0.033, 0.048, 0.026, 0.02, 0.024, 0.034, 0.038, 0.056, 0.054, 0.072, 0.051, 0.029, 0.034, 0.037, 0.037, 0.042, 0.053, 0.051, 0.036, 0.054, 0.063, 0.064, 0.039, 0.053, 0.054, 0.067, 0.07, 0.08, 0.17, 0.251, 0.162, 0.137, 0.061, 0.048, 0.07, 0.037, 0.049, 0.054, 0.051, 0.053, 0.029, 0.074, 0.07, 0.101, 0.081, 0.116, 0.291, 0.348, 0.384, 0.275, 0.145, 0.064, 0.136, 0.804, 0.97, 0.619, 0.789, 0.645, 0.405, 0.332, 0.369, 0.217, 0.156, 0.138, 0.065, 0.083, 0.102, 0.101, 0.066, 0.093, 0.09, 0.075, 0.072, 0.055, 0.038, 0.032, 0.079, 0.079, 0.065, 0.084, 0.093, 0.057, 0.044, 0.046, 0.04, 0.053, 0.056, 0.06, 0.104, 0.232, 0.306, 0.206, 0.134, 0.127, 0.09, 0.165, 0.16, 0.157, 0.093, 0.098, 0.058, 0.087, 0.085, 0.057, 0.096, 0.082, 0.092, 0.112, 0.13, 0.108, 0.081, 0.099, 0.128, 0.127, 0.126, 0.08, 0.119, 0.095, 0.099, 0.132, 0.104, 0.092, 0.119, 0.177, 0.181, 0.13, 0.221, 0.219, 0.178, 0.148, 0.21, 0.382, 0.426, 0.435, 0.333, 0.306, 0.404, 0.442, 0.667, 0.64, 0.417, 0.479, 0.446, 0.577, 0.437, 0.938, 0.714, 0.879, 0.757, 0.633, 0.843, 0.647, 0.344, 0.168, 0.174, 0.097, 0.091, 0.065, 0.084, 0.055, 0.114, 0.081, 0.156, 0.725, 1.0, 0.908, 0.959, 0.795, 0.948, 0.957, 0.924, 0.755, 0.837, 0.824, 0.721, 0.703, 0.652, 0.668, 0.706, 0.772, 0.784, 0.799, 0.79, 0.728, 0.803, 0.801, 0.823, 0.807, 0.781, 0.729, 0.721, 0.673, 0.504, 0.453, 0.41, 0.402, 0.216, 0.011, 0.008, 0.004, 0.002, 0.001, 0.001, 0.002, 0.001, 0.001, 0.006, 0.089, 0.204, 0.394, 0.584, 0.59, 0.311, 0.297, 0.261, 0.241, 0.234, 0.188, 0.164, 0.175, 0.202, 0.194, 0.177, 0.174, 0.18, 0.183, 0.163, 0.168, 0.162, 0.158, 0.159, 0.167, 0.169, 0.182, 0.169, 0.169, 0.162, 0.113, 0.075, 0.054, 0.04, 0.033, 0.017, 0.015, 0.007, 0.008, 0.008, 0.012, 0.013, 0.033, 0.057, 0.088, 0.11, 0.118, 0.136, 0.139, 0.15, 0.162, 0.182, 0.185, 0.219, 0.227, 0.255, 0.251, 0.282, 0.325, 0.369, 0.438, 0.405, 0.423, 0.389, 0.362, 0.323, 0.341, 0.372, 0.436, 0.449, 0.457, 0.479, 0.532, 0.593, 0.641, 0.681, 0.623, 0.511, 0.362, 0.319, 0.215, 0.237, 0.167, 0.152, 0.121, 0.146, 0.241, 0.224, 0.209, 0.229, 0.271, 0.35, 0.493, 0.603, 0.682, 0.725, 0.678, 0.684, 0.693, 0.636, 0.618, 0.626, 0.591, 0.615, 0.598, 0.548, 0.549, 0.494, 0.417, 0.406, 0.414, 0.414, 0.356, 0.372, 0.401, 0.459, 0.412, 0.357, 0.187, 0.121, 0.1, 0.045, 0.028, 0.007, 0.005, 0.004, 0.002, 0.002, 0.001, 0.0, 0.003, 0.08, 0.263, 0.232, 0.521, 0.703, 0.791, 0.723, 0.694, 0.622, 0.621, 0.578, 0.57, 0.499, 0.468, 0.444, 0.41, 0.336, 0.258, 0.141, 0.09, 0.038, 0.033, 0.028, 0.025, 0.025, 0.02, 0.016, 0.016, 0.011, 0.009, 0.009, 0.009, 0.008, 0.008, 0.007, 0.007, 0.007, 0.007, 0.011, 0.03, 0.04, 0.076, 0.142, 0.219, 0.292, 0.375, 0.453, 0.57, 0.684, 0.718, 0.709, 0.697, 0.637, 0.585, 0.551, 0.527, 0.502, 0.471, 0.457, 0.404, 0.38, 0.344, 0.343, 0.336, 0.328, 0.299, 0.259, 0.19, 0.09, 0.052, 0.034, 0.017, 0.008, 0.006, 0.006, 0.005, 0.005, 0.005, 0.004, 0.006, 0.021, 0.085, 0.363, 0.447, 0.556, 0.513, 0.638, 0.617, 0.537, 0.55, 0.469, 0.471, 0.439, 0.406, 0.462, 0.489, 0.49, 0.481, 0.458, 0.44, 0.462, 0.454, 0.418, 0.393, 0.388, 0.387, 0.396, 0.38, 0.37, 0.367, 0.377, 0.392, 0.4, 0.37, 0.365, 0.385, 0.366, 0.345, 0.33, 0.329, 0.297, 0.329, 0.244, 0.21, 0.188, 0.145, 0.078, 0.019, 0.01, 0.006, 0.004, 0.004, 0.003, 0.003, 0.014, 0.12, 0.327, 0.458, 0.47, 0.529, 0.551, 0.505, 0.401, 0.38, 0.38, 0.379, 0.383, 0.362, 0.381, 0.366, 0.391, 0.407, 0.406, 0.414, 0.409, 0.402, 0.397, 0.397, 0.401, 0.417, 0.394, 0.412, 0.385, 0.328, 0.205, 0.178, 0.164, 0.139, 0.067, 0.016, 0.011, 0.005, 0.002, 0.001, 0.001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.001, 0.001, 0.046, 0.046, 0.068, 0.047, 0.067, 0.065, 0.05, 0.061, 0.09, 0.101, 0.135, 0.17, 0.235, 0.232, 0.247, 0.244, 0.237, 0.244, 0.248, 0.231, 0.242, 0.238, 0.23, 0.221, 0.223, 0.224, 0.217, 0.216, 0.215, 0.218, 0.22, 0.218, 0.2, 0.192, 0.188, 0.182, 0.172, 0.169, 0.199, 0.214, 0.266, 0.288, 0.292, 0.312, 0.296, 0.253, 0.16, 0.147, 0.13, 0.107, 0.089]</script>
 <div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
 <div class="refrow"><span class="chip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="chip match" title="dei6 — correct"><span class="han">哋</span> dei6</span><span class="chip match" title="jiu3 — correct"><span class="han">要</span> jiu3</span><span class="chip match" title="heoi3 — correct"><span class="han">去</span> heoi3</span><span class="chip match" title="gung1 — correct"><span class="han">公</span> gung1</span><span class="chip sub" title="jyun5 — wrong"><span class="han">園</span> jyun5</span><span class="chip sub" title="waan2 — wrong"><span class="han">玩</span> waan2</span><span class="chip sub" title="waat6 — wrong"><span class="han">滑</span> waat6</span><span class="chip sub" title="tai1 — wrong"><span class="han">梯</span> tai1</span></div>
-<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box to hear it):</div>
+<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box or the waveform to hear it):</div>
 <div class="tier"><div class="box match" data-start="1.64" data-end="1.89" style="left:33.24%;width:5.07%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="box match" data-start="1.89" data-end="2.25" style="left:38.31%;width:7.30%;border-top-color:#555555" title="dei6 conf 100% — click to play">dei6<small>100%</small></div><div class="box match" data-start="2.25" data-end="2.65" style="left:45.60%;width:8.11%;border-top-color:#4daf4a" title="jiu3 conf 100% — click to play">jiu3<small>100%</small></div><div class="box match" data-start="2.65" data-end="3.01" style="left:53.71%;width:7.30%;border-top-color:#4daf4a" title="heoi3 conf 100% — click to play">heoi3<small>100%</small></div><div class="box match" data-start="3.01" data-end="3.33" style="left:61.01%;width:6.49%;border-top-color:#e41a1c" title="gung1 conf 100% — click to play">gung1<small>100%</small></div><div class="box sub" data-start="3.33" data-end="3.61" style="left:67.49%;width:5.67%;border-top-color:#ff7f00" title="jyu5 conf 57% alt: jyu6(0.35), jyu4(0.04) — click to play">jyu5<small>57%</small></div><div class="box sub" data-start="3.61" data-end="4.05" style="left:73.17%;width:8.92%;border-top-color:#377eb8" title="waa2 conf 93% alt: waa6(0.07) — click to play">waa2<small>93%</small></div><div class="box sub" data-start="4.05" data-end="4.49" style="left:82.08%;width:8.92%;border-top-color:#555555" title="waak6 conf 98% alt: waa6(0.01) — click to play">waak6<small>98%</small></div><div class="box sub" data-start="4.49" data-end="4.93" style="left:91.00%;width:8.92%;border-top-color:#4daf4a" title="taai3 conf 70% alt: taai1(0.29) — click to play">taai3<small>70%</small></div></div>
 </section>
 
@@ -52,9 +123,11 @@ syllable error rate 0.444 · duration 4.93s · tone colours: <span style="color:
 <p class="muted">unknown · ref mtr_03 ·
 syllable error rate 0.364 · duration 5.35s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
 <audio controls preload="metadata" src="assets/spk_s02__env_unknown__prompt_mtr_03__take_01.wav"></audio>
+<canvas class="wave" data-dur="5.354"></canvas>
+<script type="application/json" class="peaks">[0.0, 0.0, 0.001, 0.021, 0.03, 0.034, 0.041, 0.03, 0.068, 0.058, 0.074, 0.075, 0.047, 0.061, 0.081, 0.106, 0.072, 0.151, 0.104, 0.108, 0.088, 0.12, 0.112, 0.129, 0.163, 0.146, 0.194, 0.198, 0.215, 0.132, 0.145, 0.146, 0.148, 0.123, 0.174, 0.162, 0.171, 0.119, 0.181, 0.2, 0.206, 0.261, 0.179, 0.178, 0.149, 0.183, 0.173, 0.338, 0.284, 0.175, 0.213, 0.217, 0.325, 0.118, 0.221, 0.198, 0.159, 0.143, 0.211, 0.18, 0.278, 0.295, 0.261, 0.288, 0.225, 0.212, 0.128, 0.092, 0.141, 0.112, 0.126, 0.182, 0.174, 0.459, 0.898, 0.468, 0.367, 0.27, 0.173, 0.148, 0.152, 0.092, 0.083, 0.071, 0.089, 0.079, 0.17, 0.16, 0.118, 0.114, 0.12, 0.182, 0.114, 0.134, 0.518, 1.0, 0.865, 0.63, 0.383, 0.774, 0.977, 0.83, 0.851, 0.879, 0.82, 0.77, 0.75, 0.61, 0.566, 0.577, 0.739, 0.619, 0.615, 0.657, 0.603, 0.71, 0.635, 0.64, 0.618, 0.649, 0.597, 0.607, 0.547, 0.55, 0.639, 0.614, 0.616, 0.286, 0.154, 0.116, 0.117, 0.076, 0.038, 0.03, 0.029, 0.032, 0.049, 0.062, 0.047, 0.055, 0.124, 0.204, 0.171, 0.217, 0.521, 0.77, 0.828, 0.725, 0.683, 0.599, 0.634, 0.623, 0.581, 0.551, 0.605, 0.647, 0.567, 0.671, 0.65, 0.561, 0.513, 0.506, 0.551, 0.508, 0.501, 0.405, 0.479, 0.55, 0.594, 0.488, 0.399, 0.417, 0.543, 0.55, 0.262, 0.196, 0.095, 0.083, 0.085, 0.059, 0.042, 0.031, 0.034, 0.032, 0.031, 0.046, 0.044, 0.174, 0.694, 0.532, 0.414, 0.554, 0.567, 0.523, 0.535, 0.489, 0.497, 0.443, 0.496, 0.442, 0.432, 0.369, 0.37, 0.323, 0.331, 0.29, 0.305, 0.325, 0.336, 0.245, 0.215, 0.155, 0.099, 0.047, 0.067, 0.058, 0.047, 0.039, 0.06, 0.155, 0.152, 0.087, 0.052, 0.027, 0.018, 0.012, 0.016, 0.023, 0.411, 0.378, 0.467, 0.492, 0.458, 0.458, 0.48, 0.507, 0.481, 0.433, 0.481, 0.458, 0.381, 0.396, 0.385, 0.393, 0.323, 0.328, 0.316, 0.331, 0.334, 0.324, 0.34, 0.266, 0.252, 0.195, 0.117, 0.085, 0.061, 0.064, 0.055, 0.042, 0.047, 0.04, 0.04, 0.034, 0.021, 0.023, 0.026, 0.031, 0.038, 0.035, 0.031, 0.035, 0.044, 0.043, 0.03, 0.05, 0.044, 0.036, 0.041, 0.041, 0.062, 0.097, 0.14, 0.146, 0.146, 0.131, 0.096, 0.096, 0.077, 0.061, 0.055, 0.056, 0.047, 0.073, 0.072, 0.074, 0.069, 0.07, 0.065, 0.09, 0.08, 0.093, 0.105, 0.123, 0.11, 0.107, 0.12, 0.106, 0.099, 0.098, 0.092, 0.082, 0.067, 0.032, 0.019, 0.011, 0.015, 0.055, 0.048, 0.117, 0.275, 0.29, 0.198, 0.185, 0.161, 0.313, 0.333, 0.332, 0.5, 0.462, 0.456, 0.483, 0.475, 0.511, 0.497, 0.46, 0.421, 0.417, 0.468, 0.491, 0.447, 0.465, 0.458, 0.458, 0.48, 0.466, 0.465, 0.419, 0.409, 0.354, 0.245, 0.276, 0.215, 0.23, 0.156, 0.135, 0.126, 0.143, 0.145, 0.195, 0.251, 0.24, 0.286, 0.372, 0.395, 0.428, 0.458, 0.304, 0.267, 0.144, 0.092, 0.098, 0.102, 0.08, 0.094, 0.067, 0.059, 0.044, 0.044, 0.03, 0.031, 0.035, 0.036, 0.038, 0.036, 0.05, 0.037, 0.029, 0.039, 0.05, 0.087, 0.069, 0.149, 0.152, 0.28, 0.457, 0.26, 0.262, 0.276, 0.569, 0.626, 0.445, 0.356, 0.351, 0.334, 0.342, 0.378, 0.365, 0.388, 0.441, 0.418, 0.315, 0.31, 0.291, 0.285, 0.304, 0.259, 0.194, 0.167, 0.126, 0.124, 0.103, 0.087, 0.111, 0.111, 0.1, 0.101, 0.105, 0.083, 0.069, 0.071, 0.077, 0.089, 0.071, 0.049, 0.052, 0.077, 0.053, 0.069, 0.086, 0.067, 0.047, 0.048, 0.058, 0.063, 0.058, 0.036, 0.026, 0.043, 0.123, 0.161, 0.198, 0.214, 0.203, 0.189, 0.188, 0.193, 0.207, 0.187, 0.215, 0.201, 0.187, 0.192, 0.172, 0.161, 0.133, 0.141, 0.096, 0.06, 0.039, 0.048, 0.04, 0.049, 0.044, 0.051, 0.038, 0.031, 0.022, 0.022, 0.043, 0.094, 0.166, 0.197, 0.192, 0.165, 0.161, 0.148, 0.096, 0.061, 0.023, 0.011, 0.007, 0.007, 0.009, 0.009, 0.012, 0.008, 0.007, 0.008, 0.008, 0.007, 0.006, 0.006, 0.007, 0.006, 0.011, 0.01, 0.009, 0.009, 0.027, 0.096, 0.035, 0.046, 0.061, 0.07, 0.089, 0.095, 0.14, 0.118, 0.111, 0.078, 0.067, 0.067, 0.204, 0.219, 0.267, 0.283, 0.282, 0.249, 0.251, 0.263, 0.215, 0.203, 0.294, 0.303, 0.122, 0.016, 0.015, 0.016, 0.009, 0.01, 0.008, 0.007, 0.008, 0.009, 0.009, 0.011, 0.009, 0.011, 0.016, 0.013, 0.009, 0.008, 0.011, 0.007, 0.017, 0.009, 0.012, 0.009, 0.011, 0.011, 0.009, 0.009, 0.012, 0.014, 0.013, 0.014, 0.011, 0.013, 0.014, 0.017, 0.012, 0.012, 0.011, 0.012, 0.012, 0.012, 0.013, 0.01, 0.012, 0.008, 0.011, 0.011, 0.014, 0.013, 0.01, 0.01, 0.016, 0.008, 0.013, 0.015, 0.011, 0.014, 0.014, 0.011, 0.014, 0.013, 0.009, 0.01, 0.013]</script>
 <div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
 <div class="refrow"><span class="chip sub" title="ze6 — wrong"><span class="han">姐</span> ze6</span><span class="chip match" title="ze1 — correct"><span class="han">姐</span> ze1</span><span class="chip sub" title="bong1 — wrong"><span class="han">幫</span> bong1</span><span class="chip match" title="ngo5 — correct"><span class="han">我</span> ngo5</span><span class="chip match" title="zin2 — correct"><span class="han">剪</span> zin2</span><span class="chip match" title="zo2 — correct"><span class="han">咗</span> zo2</span><span class="chip match" title="jat1 — correct"><span class="han">一</span> jat1</span><span class="chip match" title="zoeng1 — correct"><span class="han">張</span> zoeng1</span><span class="chip sub" title="saan1 — wrong"><span class="han">生</span> saan1</span><span class="chip match" title="jat6 — correct"><span class="han">日</span> jat6</span><span class="chip sub" title="kaat1 — wrong"><span class="han">卡</span> kaat1</span></div>
-<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box to hear it):</div>
+<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box or the waveform to hear it):</div>
 <div class="tier"><div class="box sub" data-start="0.96" data-end="1.21" style="left:17.93%;width:4.67%;border-top-color:#984ea3" title="ze4 conf 64% alt: ze6(0.35) — click to play">ze4<small>64%</small></div><div class="box match" data-start="1.21" data-end="1.61" style="left:22.60%;width:7.47%;border-top-color:#e41a1c" title="ze1 conf 100% — click to play">ze1<small>100%</small></div><div class="box sub" data-start="1.61" data-end="1.97" style="left:30.07%;width:6.72%;border-top-color:#e41a1c" title="fon1 conf 93% alt: fong1(0.07) — click to play">fon1<small>93%</small></div><div class="box match" data-start="1.97" data-end="2.33" style="left:36.79%;width:6.72%;border-top-color:#ff7f00" title="ngo5 conf 100% — click to play">ngo5<small>100%</small></div><div class="box match" data-start="2.33" data-end="2.77" style="left:43.52%;width:8.22%;border-top-color:#377eb8" title="zin2 conf 100% — click to play">zin2<small>100%</small></div><div class="box match" data-start="2.77" data-end="3.17" style="left:51.74%;width:7.47%;border-top-color:#377eb8" title="zo2 conf 100% — click to play">zo2<small>100%</small></div><div class="box match" data-start="3.17" data-end="3.49" style="left:59.21%;width:5.98%;border-top-color:#e41a1c" title="jat1 conf 100% — click to play">jat1<small>100%</small></div><div class="box match" data-start="3.49" data-end="3.93" style="left:65.18%;width:8.22%;border-top-color:#e41a1c" title="zoeng1 conf 100% — click to play">zoeng1<small>100%</small></div><div class="box sub" data-start="3.93" data-end="4.29" style="left:73.40%;width:6.72%;border-top-color:#e41a1c" title="saang1 conf 100% — click to play">saang1<small>100%</small></div><div class="box match" data-start="4.29" data-end="4.38" style="left:80.13%;width:1.68%;border-top-color:#555555" title="jat6 conf 100% — click to play">jat6<small>100%</small></div><div class="box sub" data-start="4.53" data-end="4.81" style="left:84.61%;width:5.23%;border-top-color:#e41a1c" title="kaak1 conf 98% alt: kaat1(0.02) — click to play">kaak1<small>98%</small></div></div>
 </section>
 
@@ -63,22 +136,55 @@ syllable error rate 0.364 · duration 5.35s · tone colours: <span style="color:
 <p class="muted">iphone_far · ref mtr_05 ·
 syllable error rate 0.222 · duration 3.65s · tone colours: <span style="color:#e41a1c">■1</span> <span style="color:#377eb8">■2</span> <span style="color:#4daf4a">■3</span> <span style="color:#984ea3">■4</span> <span style="color:#ff7f00">■5</span> <span style="color:#555555">■6</span></p>
 <audio controls preload="metadata" src="assets/spk_s01__env_iphone_far__prompt_mtr_05__take_01.wav"></audio>
+<canvas class="wave" data-dur="3.654"></canvas>
+<script type="application/json" class="peaks">[0.0, 0.0, 0.0, 0.0, 0.002, 0.003, 0.003, 0.047, 0.051, 0.013, 0.008, 0.009, 0.008, 0.009, 0.009, 0.01, 0.01, 0.009, 0.01, 0.01, 0.013, 0.014, 0.017, 0.016, 0.014, 0.017, 0.018, 0.02, 0.023, 0.021, 0.024, 0.026, 0.018, 0.025, 0.019, 0.03, 0.022, 0.024, 0.026, 0.029, 0.045, 0.03, 0.037, 0.042, 0.044, 0.043, 0.058, 0.044, 0.038, 0.041, 0.044, 0.031, 0.058, 0.043, 0.035, 0.048, 0.04, 0.05, 0.049, 0.032, 0.056, 0.049, 0.049, 0.046, 0.05, 0.056, 0.087, 0.034, 0.054, 0.038, 0.057, 0.076, 0.056, 0.059, 0.068, 0.048, 0.057, 0.067, 0.054, 0.055, 0.056, 0.063, 0.053, 0.062, 0.051, 0.056, 0.058, 0.062, 0.063, 0.062, 0.091, 0.058, 0.058, 0.076, 0.078, 0.128, 0.1, 0.084, 0.062, 0.084, 0.085, 0.069, 0.071, 0.067, 0.078, 0.066, 0.058, 0.068, 0.096, 0.083, 0.062, 0.108, 0.06, 0.078, 0.075, 0.099, 0.122, 0.124, 0.105, 0.108, 0.121, 0.083, 0.077, 0.087, 0.141, 0.144, 0.109, 0.108, 0.182, 0.175, 0.184, 0.174, 0.261, 0.242, 0.178, 0.182, 0.207, 0.141, 0.23, 0.229, 0.456, 0.43, 0.6, 0.5, 0.417, 0.309, 0.234, 0.22, 0.26, 0.262, 0.188, 0.229, 0.204, 0.265, 0.256, 0.181, 0.266, 0.27, 0.241, 0.271, 0.3, 0.251, 0.216, 0.202, 0.21, 0.19, 0.156, 0.196, 0.22, 0.221, 0.213, 0.2, 0.159, 0.212, 0.209, 0.21, 0.196, 0.214, 0.164, 0.174, 0.13, 0.112, 0.102, 0.141, 0.412, 0.217, 0.137, 0.095, 0.094, 0.082, 0.091, 0.357, 0.525, 0.758, 0.957, 0.886, 1.0, 0.94, 0.865, 0.747, 0.725, 0.664, 0.575, 0.581, 0.584, 0.586, 0.445, 0.551, 0.464, 0.527, 0.496, 0.412, 0.603, 0.51, 0.443, 0.36, 0.341, 0.362, 0.468, 0.463, 0.463, 0.4, 0.422, 0.388, 0.457, 0.366, 0.238, 0.111, 0.118, 0.066, 0.077, 0.066, 0.184, 0.153, 0.13, 0.074, 0.074, 0.086, 0.091, 0.088, 0.1, 0.089, 0.079, 0.069, 0.091, 0.124, 0.202, 0.198, 0.232, 0.213, 0.236, 0.235, 0.204, 0.099, 0.133, 0.141, 0.108, 0.172, 0.121, 0.117, 0.101, 0.097, 0.113, 0.077, 0.096, 0.096, 0.094, 0.076, 0.084, 0.068, 0.082, 0.08, 0.044, 0.065, 0.063, 0.087, 0.078, 0.068, 0.066, 0.034, 0.039, 0.056, 0.076, 0.11, 0.067, 0.094, 0.123, 0.143, 0.096, 0.102, 0.098, 0.071, 0.065, 0.107, 0.166, 0.098, 0.111, 0.141, 0.134, 0.148, 0.135, 0.114, 0.09, 0.144, 0.106, 0.178, 0.171, 0.176, 0.221, 0.198, 0.238, 0.221, 0.203, 0.183, 0.178, 0.156, 0.155, 0.165, 0.175, 0.165, 0.146, 0.159, 0.145, 0.122, 0.184, 0.154, 0.131, 0.109, 0.11, 0.091, 0.118, 0.081, 0.102, 0.098, 0.091, 0.076, 0.079, 0.061, 0.047, 0.055, 0.058, 0.14, 0.084, 0.061, 0.281, 0.248, 0.297, 0.255, 0.337, 0.314, 0.4, 0.352, 0.315, 0.272, 0.286, 0.249, 0.257, 0.295, 0.29, 0.292, 0.226, 0.251, 0.259, 0.265, 0.215, 0.18, 0.134, 0.112, 0.12, 0.106, 0.076, 0.055, 0.053, 0.048, 0.044, 0.042, 0.056, 0.046, 0.056, 0.076, 0.039, 0.044, 0.035, 0.044, 0.054, 0.038, 0.038, 0.045, 0.05, 0.046, 0.045, 0.103, 0.198, 0.163, 0.154, 0.189, 0.128, 0.161, 0.121, 0.131, 0.185, 0.113, 0.11, 0.137, 0.131, 0.127, 0.147, 0.113, 0.115, 0.108, 0.064, 0.081, 0.075, 0.07, 0.064, 0.071, 0.059, 0.065, 0.052, 0.05, 0.047, 0.091, 0.069, 0.052, 0.053, 0.044, 0.058, 0.066, 0.052, 0.045, 0.051, 0.048, 0.048, 0.067, 0.057, 0.082, 0.066, 0.047, 0.068, 0.061, 0.067, 0.069, 0.068, 0.074, 0.105, 0.118, 0.104, 0.122, 0.16, 0.111, 0.11, 0.124, 0.154, 0.188, 0.201, 0.245, 0.248, 0.254, 0.266, 0.204, 0.203, 0.143, 0.12, 0.078, 0.055, 0.059, 0.055, 0.068, 0.041, 0.057, 0.05, 0.043, 0.264, 0.154, 0.098, 0.166, 0.094, 0.088, 0.085, 0.063, 0.072, 0.091, 0.09, 0.061, 0.07, 0.06, 0.066, 0.068, 0.065, 0.059, 0.089, 0.122, 0.149, 0.145, 0.142, 0.181, 0.204, 0.18, 0.2, 0.214, 0.211, 0.219, 0.149, 0.13, 0.121, 0.134, 0.14, 0.127, 0.147, 0.154, 0.166, 0.135, 0.155, 0.123, 0.13, 0.14, 0.137, 0.139, 0.09, 0.138, 0.165, 0.126, 0.142, 0.098, 0.061, 0.101, 0.096, 0.079, 0.088, 0.101, 0.09, 0.102, 0.084, 0.104, 0.092, 0.108, 0.102, 0.116, 0.137, 0.105, 0.123, 0.106, 0.172, 0.114, 0.112, 0.145, 0.124, 0.136, 0.104, 0.129, 0.158, 0.107, 0.103, 0.148, 0.127, 0.118, 0.09, 0.107, 0.066, 0.11, 0.086, 0.103, 0.1, 0.078, 0.075, 0.068, 0.061, 0.052, 0.049, 0.064, 0.076, 0.052, 0.047, 0.074, 0.056, 0.038, 0.043, 0.061, 0.041, 0.052, 0.049, 0.046, 0.042, 0.043, 0.057, 0.054, 0.052, 0.059, 0.058, 0.07, 0.052, 0.064, 0.064, 0.066, 0.07, 0.042, 0.065, 0.051, 0.053, 0.082]</script>
 <div class="muted">Reference (hanzi + jyutping; red = misrecognised, dashed = deleted):</div>
 <div class="refrow"><span class="chip match" title="ping4 — correct"><span class="han">蘋</span> ping4</span><span class="chip match" title="gwo2 — correct"><span class="han">果</span> gwo2</span><span class="chip match" title="tung4 — correct"><span class="han">同</span> tung4</span><span class="chip sub" title="caang2 — wrong"><span class="han">橙</span> caang2</span><span class="chip match" title="dou1 — correct"><span class="han">都</span> dou1</span><span class="chip match" title="fong3 — correct"><span class="han">放</span> fong3</span><span class="chip match" title="hai2 — correct"><span class="han">喺</span> hai2</span><span class="chip match" title="toi4 — correct"><span class="han">枱</span> toi4</span><span class="chip sub" title="min6 — wrong"><span class="han">面</span> min6</span></div>
-<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box to hear it):</div>
+<div class="muted">Hypothesis (positioned by model time; red = substitution, orange dashed = insertion; click a box or the waveform to hear it):</div>
 <div class="tier"><div class="box match" data-start="0.84" data-end="1.09" style="left:22.99%;width:6.84%;border-top-color:#984ea3" title="ping4 conf 100% — click to play">ping4<small>100%</small></div><div class="box match" data-start="1.09" data-end="1.41" style="left:29.83%;width:8.76%;border-top-color:#377eb8" title="gwo2 conf 100% — click to play">gwo2<small>100%</small></div><div class="box match" data-start="1.41" data-end="1.73" style="left:38.59%;width:8.76%;border-top-color:#984ea3" title="tung4 conf 100% — click to play">tung4<small>100%</small></div><div class="box sub" data-start="1.73" data-end="2.09" style="left:47.35%;width:9.85%;border-top-color:#984ea3" title="caan4 conf 96% alt: caang4(0.02) — click to play">caan4<small>96%</small></div><div class="box match" data-start="2.09" data-end="2.29" style="left:57.20%;width:5.47%;border-top-color:#e41a1c" title="dou1 conf 100% — click to play">dou1<small>100%</small></div><div class="box match" data-start="2.29" data-end="2.65" style="left:62.67%;width:9.85%;border-top-color:#4daf4a" title="fong3 conf 100% — click to play">fong3<small>100%</small></div><div class="box match" data-start="2.65" data-end="2.89" style="left:72.52%;width:6.57%;border-top-color:#377eb8" title="hai2 conf 100% — click to play">hai2<small>100%</small></div><div class="box match" data-start="2.89" data-end="3.21" style="left:79.09%;width:8.76%;border-top-color:#984ea3" title="toi4 conf 97% alt: toi3(0.02) — click to play">toi4<small>97%</small></div><div class="box sub" data-start="3.21" data-end="3.65" style="left:87.85%;width:12.04%;border-top-color:#555555" title="in6 conf 23% alt: i6(0.22), i3(0.05) — click to play">in6<small>23%</small></div></div>
 </section>
 <script>
+function drawWave(canvas, peaks, t, dur) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w) return;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const g = canvas.getContext('2d');
+  g.scale(dpr, dpr);
+  g.clearRect(0, 0, w, h);
+  const mid = h / 2, n = peaks.length;
+  g.fillStyle = '#90a4ae';
+  for (let i = 0; i < n; i++) {
+    const x = (i / n) * w, bh = Math.max(1, peaks[i] * (h - 6));
+    g.fillRect(x, mid - bh / 2, Math.max(1, w / n - 0.3), bh);
+  }
+  if (t !== null && dur > 0) {
+    g.fillStyle = '#1a73e8';
+    g.fillRect((t / dur) * w - 1, 0, 2, h);
+  }
+}
 document.querySelectorAll('.demo').forEach(demo => {
   const audio = demo.querySelector('audio');
   const boxes = [...demo.querySelectorAll('.box[data-start]')];
-  audio.addEventListener('timeupdate', () => {
-    const t = audio.currentTime;
+  const canvas = demo.querySelector('canvas.wave');
+  const peaks = JSON.parse(demo.querySelector('script.peaks').textContent);
+  const dur = parseFloat(canvas.dataset.dur);
+  const render = (t) => {
+    drawWave(canvas, peaks, t, dur);
     boxes.forEach(b => {
       const s = parseFloat(b.dataset.start), e = parseFloat(b.dataset.end);
-      b.classList.toggle('active', t >= s && t < e);
+      b.classList.toggle('active', t !== null && t >= s && t < e);
     });
-  });
+  };
+  render(null);
+  audio.addEventListener('timeupdate', () => render(audio.currentTime));
+  audio.addEventListener('seeked', () => render(audio.currentTime));
+  window.addEventListener('resize', () => render(audio.currentTime));
+  const seek = (ev) => {
+    const r = canvas.getBoundingClientRect();
+    audio.currentTime = Math.min(Math.max((ev.clientX - r.left) / r.width, 0), 1) * dur;
+  };
+  canvas.addEventListener('click', (ev) => { seek(ev); audio.play(); });
   boxes.forEach(b => b.addEventListener('click', () => {
     audio.currentTime = parseFloat(b.dataset.start);
     audio.play();
