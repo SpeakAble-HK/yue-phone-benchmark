@@ -27,10 +27,10 @@ audio{width:100%;margin:.4rem 0}
 table{border-collapse:collapse;margin:.6rem 0}td,th{border:1px solid #ccc;padding:.25rem .6rem;font-size:.9rem;text-align:left}
 img.fig{max-width:100%;border:1px solid #ddd;border-radius:4px;margin:.4rem 0}</style></head><body>
 <h1>yue-phone v2 — Cantonese phone benchmark (50 clips)</h1>
-<p>Scoring-input audio: 16 kHz mono WAVs. Systems: <b>yue-phone v2</b>
+<p><a href="https://github.com/SpeakAble-HK/yue-phone-benchmark">GitHub: SpeakAble-HK/yue-phone-benchmark</a></p>
+<p>Scoring-input audio: 16 kHz mono WAVs. System: <b>yue-phone v2</b>
 (fine-tuned wav2vec2 + BERT-style Jyutping, ~6k hours Cantonese, iterative
-pseudo-label correction) on original vs sherpa-onnx DPDFNet dpdfnet8-enhanced
-input. Quality raters: DNSMOS P.835 + SIGMOS P.804.
+pseudo-label correction). Quality raters: DNSMOS P.835 + SIGMOS P.804.
 Full data: private repo <code>speakable-phone-benchmark</code>
 (<code>BENCHMARK.md</code>).</p>
 
@@ -55,51 +55,36 @@ SIGMOS P.804: COL/DISC/LOUD/NOISE/REVERB/SIG/OVRL. Per-clip distributions
 background noise is the problem (BAK ≈ 2.5, NOISE ≈ 2.5), not the voice itself
 (SIG ≈ 3.2 fair, DISC ≈ 3.5 good). Reverb is a non-issue (≈ 3.9 good).</p>
 
-<h2>3. Enhancement comparison: dpdfnet8</h2>
-<p>sherpa-onnx 1.13.8 offline denoiser, dpdfnet8 (best 16 kHz quality). Mean overall quality by environment (original → enhanced):</p>
-<table><tr><th>environment</th><th>dnsmos_ovrl</th><th>sigmos_ovrl</th></tr>
-<tr><td>studio_reference</td><td>2.71 → 3.06 (+0.35)</td><td>2.65 → 3.02 (+0.37)</td></tr>
-<tr><td>iphone_close</td><td>2.58 → 3.08 (+0.50)</td><td>2.11 → 2.65 (+0.54)</td></tr>
-<tr><td>iphone_far</td><td>1.94 → 3.02 (+1.09)</td><td>2.08 → 2.69 (+0.62)</td></tr>
-<tr><td>unknown</td><td>2.14 → 2.99 (+0.85)</td><td>2.19 → 2.91 (+0.73)</td></tr></table>
-<img class="fig" src="figs/mos_ovrl_by_env.png" alt="overall quality by environment">
-<img class="fig" src="figs/mos_delta.png" alt="mean change per metric">
-<p>Mean change per metric (n=50): dnsmos_sig +0.04, <b>bak +1.51</b>, ovrl +0.73;
-sigmos_col +0.62, disc +0.53, loud +0.52, <b>noise +1.84</b>, reverb +0.26,
-sig +0.45, ovrl +0.60. The denoiser fixes background, barely touches signal.</p>
-
-<h2>4. Baseline model: yue-phone v2</h2>
+<h2>3. Baseline model: yue-phone v2</h2>
 <p>Fine-tuned wav2vec2 with BERT-style Jyutping modeling; ~6k hours Cantonese with
 iterative pseudo-label correction. Served on GPU via <code>/v1/phoneme</code>
 (~0.03–0.05 RTF).</p>
 
-<h2>5. ASR: yue-phone, original vs enhanced input</h2>
+<h2>4. ASR: yue-phone v2 on original input</h2>
 <table><tr><th>input</th><th>exact</th><th>mean SER</th><th>median SER</th></tr>
-<tr><td>original</td><td>14/50</td><td>0.232</td><td>0.139</td></tr>
-<tr><td>enhanced (dpdfnet8)</td><td>13/50</td><td>0.240</td><td>0.167</td></tr></table>
+<tr><td>original</td><td>14/50</td><td>0.232</td><td>0.139</td></tr></table>
 <img class="fig" src="figs/ser_by_env.png" alt="SER by environment">
-<p>Mean SER by environment (original → enhanced): studio_reference 0.093 → 0.103,
-iphone_close 0.188 → 0.199, iphone_far 0.144 → 0.120 (only gain),
-unknown 0.369 → 0.389. 23/50 transcripts change; net effect nil-to-negative.</p>
+<p>Mean SER by environment: studio_reference 0.093,
+iphone_close 0.188, iphone_far 0.144,
+unknown 0.369.</p>
 
-<h2>6. Confusion analysis (onset / rime / coda / tone)</h2>
+<h2>5. Confusion analysis (onset / rime / coda / tone)</h2>
 <p>Syllables split four ways (rime = vocalic nucleus incl. i/u glides;
-coda ∈ m/n/ng/p/t/k/∅). Component accuracy (original → enhanced):
-onset 0.877 → 0.855, rime 0.870 → 0.864, coda 0.862 → 0.857, tone 0.858 → 0.860.</p>
+coda ∈ m/n/ng/p/t/k/∅). Component accuracy:
+onset 0.877, rime 0.870, coda 0.862, tone 0.858.</p>
 <img class="fig" src="figs/component_accuracy.png" alt="component accuracy">
 <img class="fig" src="figs/confusion_tone_original.png" alt="tone confusion">
 <img class="fig" src="figs/confusion_coda_original.png" alt="coda confusion">
-<p>Top patterns (stable across both sets): coda <b>n→∅</b> (x11), <b>t→k</b> (x9);
+<p>Top patterns: coda <b>n→∅</b> (x11), <b>t→k</b> (x9);
 tone <b>6→4 / 6→1</b> (x6 each); onset <b>z→d</b> (x5); rime <b>u→o</b>,
 <b>yu→a</b>. Weak spots: nasal/stop codas and tone 6.</p>
 
-<h2>7. Takeaways</h2>
-<ul><li>yue-phone v1 baseline: 14/50 exact, mean SER 0.232 (median 0.139).</li>
+<h2>6. Takeaways</h2>
+<ul><li>yue-phone v2 baseline: 14/50 exact, mean SER 0.232 (median 0.139).</li>
 <li>Hardest slice: unknown (0.369); easiest: studio_reference (0.093).</li>
-<li>dpdfnet8 massively improves background MOS (+1.5 bak / +1.8 noise) with no ASR gain.</li>
-<li>Error mass sits in codas (−n drop, −t→−k) and tone 6 — acoustic-model work, not denoising.</li></ul>
+<li>Error mass sits in codas (−n drop, −t→−k) and tone 6 — acoustic-model work.</li></ul>
 
-<h2>8. Worst-clip demos (time-aligned hypotheses)</h2>
+<h2>7. Worst-clip demos (time-aligned hypotheses)</h2>
 <p>Boxes span each syllable's CTC window from
 <a href="https://yue-phone.hon9kon9ize.com/docs">/v1/phoneme/detail</a> (a guide,
 not forced alignment). Click a box to hear that segment.</p>

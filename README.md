@@ -2,7 +2,7 @@
 
 Static demo page for the 50-clip Cantonese phone benchmark.
 
-- `BENCHMARK.html` — the page (`index.html` redirects to it).
+- `benchmark.html` — the page (`index.html` redirects to it).
 - `assets/` — 3 worst-clip WAVs (16 kHz mono, vendored from the private benchmark).
 
 Regenerate: `python scripts/build_demo_page.py --out <this-dir> --force`
